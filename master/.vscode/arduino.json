@@ -1,0 +1,8 @@
+{
+    "board": "arduino:avr:nano",
+    "path": "C:/Arduino",
+    "sketch": "master.ino",
+    "port": "COM5",
+    "output": "build",
+    "configuration": "cpu=atmega328old"
+}
