@@ -2,7 +2,7 @@
     "board": "arduino:avr:nano",
     "path": "C:/Arduino",
     "sketch": "morse.ino",
-    "port": "COM3",
+    "port": "COM4",
     "output": "build",
     "configuration": "cpu=atmega328old"
 }

@@ -1,13 +1,20 @@
 #include <Wire.h>
 
-byte devices[127];
-int nDevices = 0;
+byte moduleAddresses[127];
+int nModules = 0;
 
 byte strikes = 0;
 byte disarmedModules = 0;
 
 #define STATUS_ARMED 1
 #define STATUS_DISARMED 2
+
+#define COMMAND_ARM 1
+#define COMMAND_DIFFICULTY 2
+
+#define DIFFICULTY_LOW 1
+#define DIFFICULTY_MED 2
+#define DIFFICULTY_HIGH 3
 
 struct ModuleResults
 {
@@ -17,12 +24,44 @@ struct ModuleResults
 
 void setup()
 {
+	Serial.println("Master booting");
+
 	Wire.begin();
 	Serial.begin(9600);
 	
+	// let modules boot first
+	delay(100);
+
 	scanI2C();
+	setDifficulty(1);
+	arm();
 }
 
+void setDifficulty(byte difficulty)
+{
+	Wire.beginTransmission(0);
+	Wire.write(COMMAND_DIFFICULTY);
+	Wire.write(difficulty);
+	int error = Wire.endTransmission();
+	if(error != 0)
+	{
+		Serial.print("Error sending set-difficulty command: ");
+		Serial.println(error);
+	}
+}
+
+
+void arm()
+{
+	Wire.beginTransmission(0);
+	Wire.write(COMMAND_ARM);
+	int error = Wire.endTransmission();
+	if(error != 0)
+	{
+		Serial.print("Error sending arm command: ");
+		Serial.println(error);
+	}
+}
 
 void loop()
 {
@@ -44,13 +83,15 @@ void loop()
 	disarmedModules = results.disarmedModules;
 }
 
+
+
 ModuleResults readModules()
 {
 	ModuleResults results;
 
-	for(byte i = 0; i < nDevices; i++)
+	for(byte i = 0; i < nModules; i++)
 	{
-		Wire.requestFrom(devices[i], 2);
+		Wire.requestFrom((int)moduleAddresses[i], 2);
 		byte status = Wire.read();
 		byte strikes = Wire.read();
 
@@ -64,6 +105,7 @@ ModuleResults readModules()
 }
 
 void scanI2C() {
+	Serial.println("Scanning for modules...");
 	byte error;
 	for(byte address = 1; address < 127; address++) 
 	{
@@ -72,20 +114,25 @@ void scanI2C() {
 
 		if (error == 0)
 		{
-			Serial.print("I2C device found at address 0x");
+			Serial.print("	Module found at address 0x");
 			if (address<16) 
 				Serial.print("0");
 			Serial.println(address, HEX);
 
-			devices[nDevices] = address;
-			nDevices++;
+			moduleAddresses[nModules] = address;
+			nModules++;
 		}
 		else if (error == 4) 
 		{
-			Serial.print("Unknown error at address 0x");
+			Serial.print("	Unknown error at address 0x");
 			if (address<16) 
 				Serial.print("0");
-			Serial.println(address,HEX);
+			Serial.println(address, HEX);
 		}    
 	}
+
+	Serial.print("	Found ");
+	Serial.print(nModules);
+	Serial.println(" module(s)");
+	Serial.println("	Finished");
 }

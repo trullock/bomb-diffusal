@@ -1,55 +1,129 @@
 # 1 "d:\\git\\bomb-diffusal\\master\\master.ino"
 # 2 "d:\\git\\bomb-diffusal\\master\\master.ino" 2
 
+byte moduleAddresses[127];
+int nModules = 0;
+
+byte strikes = 0;
+byte disarmedModules = 0;
+# 19 "d:\\git\\bomb-diffusal\\master\\master.ino"
+struct ModuleResults
+{
+ byte strikes = 0;
+ byte disarmedModules = 0;
+};
 
 void setup()
 {
-  Wire.begin();
+ Serial.println("Master booting");
 
-  Serial.begin(9600);
-  while (!Serial); // Leonardo: wait for serial monitor
-  Serial.println("\nI2C Scanner");
+ Wire.begin();
+ Serial.begin(9600);
+
+ // let modules boot first
+ delay(100);
+
+ scanI2C();
+ setDifficulty(1);
+ arm();
+}
+
+void setDifficulty(byte difficulty)
+{
+ Wire.beginTransmission(0);
+ Wire.write(2);
+ Wire.write(difficulty);
+ int error = Wire.endTransmission();
+ if(error != 0)
+ {
+  Serial.print("Error sending set-difficulty command: ");
+  Serial.println(error);
+ }
 }
 
 
+void arm()
+{
+ Wire.beginTransmission(0);
+ Wire.write(1);
+ int error = Wire.endTransmission();
+ if(error != 0)
+ {
+  Serial.print("Error sending arm command: ");
+  Serial.println(error);
+ }
+}
+
 void loop()
 {
-  byte error, address;
-  int nDevices;
+ ModuleResults results = readModules();
 
-  Serial.println("Scanning...");
+ if(results.strikes != strikes)
+ {
+  // new strike
+  Serial.println("New strike");
+ }
 
-  nDevices = 0;
-  for(address = 1; address < 127; address++ )
+ if(results.disarmedModules != disarmedModules)
+ {
+  // new module disarmed
+  Serial.println("New module disarming");
+ }
+
+ strikes = results.strikes;
+ disarmedModules = results.disarmedModules;
+}
+
+
+
+ModuleResults readModules()
+{
+ ModuleResults results;
+
+ for(byte i = 0; i < nModules; i++)
+ {
+  Wire.requestFrom((int)moduleAddresses[i], 2);
+  byte status = Wire.read();
+  byte strikes = Wire.read();
+
+  if((status & 2) == 2)
+   results.disarmedModules++;
+
+  results.strikes += strikes;
+ }
+
+ return results;
+}
+
+void scanI2C() {
+ Serial.println("Scanning for modules...");
+ byte error;
+ for(byte address = 1; address < 127; address++)
+ {
+  Wire.beginTransmission(address);
+  error = Wire.endTransmission();
+
+  if (error == 0)
   {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
+   Serial.print("	Module found at address 0x");
+   if (address<16)
+    Serial.print("0");
+   Serial.println(address, 16);
 
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.print(address,16);
-      Serial.println("  !");
-
-      nDevices++;
-    }
-    else if (error==4)
-    {
-      Serial.print("Unknown error at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.println(address,16);
-    }
+   moduleAddresses[nModules] = address;
+   nModules++;
   }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
+  else if (error == 4)
+  {
+   Serial.print("	Unknown error at address 0x");
+   if (address<16)
+    Serial.print("0");
+   Serial.println(address, 16);
+  }
+ }
 
-  delay(5000); // wait 5 seconds for next scan
+ Serial.print("	Found ");
+ Serial.print(nModules);
+ Serial.println(" module(s)");
+ Serial.println("	Finished");
 }

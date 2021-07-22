@@ -56,9 +56,10 @@ int blipDelay = 200;
 int characterDelay = 1000;
 int loopDelay = 3000;
 
-#define WordCount 1
+#define WordCount 2
 const String words[WordCount] = {
-	"sos"
+	"alpha",
+	"bravo"
 };
 
 String currentWord;
@@ -70,24 +71,50 @@ int currentMorseIndex = -1;
 bool ledOn = false;
 unsigned long nextMillis = 0;
 
-#define LED_Pin LED_BUILTIN
+#define LED_Pin 7
 
-#line 74 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+unsigned long lastButtonMillis = 0;
+bool lastButtonPressed = false;
+bool buttonPressed = false;
+#define debounceMillis 50
+#define Button_Pin 5
+
+bool armed = false;
+byte difficulty = 1;
+
+#define COMMAND_ARM 1
+#define COMMAND_DIFFICULTY 2
+
+#define DIFFICULTY_LOW 1
+#define DIFFICULTY_MED 2
+#define DIFFICULTY_HIGH 3
+
+#line 91 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
 void setup();
-#line 95 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+#line 117 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
 void loop();
-#line 100 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+#line 126 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
 void handleKnob();
-#line 104 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+#line 131 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+void handleButton();
+#line 162 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
 void updateLed();
-#line 161 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+#line 218 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
 void requestEvent();
-#line 74 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+#line 223 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+void arm();
+#line 228 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
+void receiveEvent(int howMany);
+#line 91 "d:\\git\\bomb-diffusal\\morse\\morse.ino"
 void setup()
 {
 	// join i2c bus with address #8
-	//Wire.begin(I2CAddress);
-  	//Wire.onRequest(requestEvent);
+	Wire.begin(I2CAddress);
+	// enable broadcasts to be received
+	TWAR = (I2CAddress << 1) | 1;
+
+  	Wire.onRequest(requestEvent);
+	Wire.onReceive(receiveEvent);
 
 	Serial.begin(9600);
 
@@ -95,6 +122,7 @@ void setup()
 	Serial.println(I2CAddress);
 
 	pinMode(LED_Pin, OUTPUT);
+	pinMode(Button_Pin, INPUT);
 
 	randomSeed(analogRead(0));
 	int wordIndex = random(0, WordCount);
@@ -106,11 +134,47 @@ void setup()
 
 void loop()
 {
+	if(!armed)
+		return;
+
 	updateLed();
+	handleButton();
 }
 
 void handleKnob() {
 	int position = knob.read();
+}
+
+
+void handleButton() {
+	bool pressed = digitalRead(Button_Pin) == HIGH;
+	
+	if(pressed != lastButtonPressed)
+	{
+		lastButtonMillis = millis();	
+		lastButtonPressed = pressed;
+		return;
+	}
+
+	if(millis() > (lastButtonMillis + debounceMillis))
+	{
+		if(pressed == buttonPressed)
+			return;
+		
+		buttonPressed = pressed;
+
+		if(!pressed)
+		{
+			return;
+		}
+
+		// TODO: implement properly
+		
+		strikes++;
+		Serial.println("Striking");
+	}
+
+
 }
 
 void updateLed()
@@ -163,7 +227,6 @@ void updateLed()
 
 	// wait for dot/dash length of time
 	bool blipIsDot = currentMorseChar[currentMorseIndex] == '.';
-	Serial.println(blipIsDot ? "Dot" : "Dash");
 	nextMillis = millis() + (blipIsDot ? dotLength : dashLength);
 
 	ledOn = true;
@@ -173,4 +236,40 @@ void updateLed()
 void requestEvent() {
 	Wire.write(status);
 	Wire.write(strikes);
+}
+
+void arm()
+{
+	armed = true;
+}
+
+void receiveEvent (int howMany)
+{
+	
+	Serial.print("Received data: ");
+	Serial.println(howMany);
+
+	if(howMany == 0)
+		return;
+	
+	byte command = Wire.read();
+
+	Serial.print("Received command: ");
+	Serial.println(command);
+
+	if(command == COMMAND_DIFFICULTY)
+	{
+		difficulty = Wire.read();
+		
+		Serial.print("Setting difficulty to: ");
+		Serial.println(difficulty);
+
+		if(armed)
+			arm();
+	}
+	else if(command == COMMAND_ARM)
+	{
+		Serial.println("Arming");
+		arm();
+	}
 }

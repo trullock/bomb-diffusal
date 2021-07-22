@@ -55,9 +55,10 @@ int blipDelay = 200;
 int characterDelay = 1000;
 int loopDelay = 3000;
 
-#define WordCount 1
+#define WordCount 2
 const String words[WordCount] = {
-	"sos"
+	"alpha",
+	"bravo"
 };
 
 String currentWord;
@@ -69,36 +70,86 @@ int currentMorseIndex = -1;
 bool ledOn = false;
 unsigned long nextMillis = 0;
 
-#define LED_Pin LED_BUILTIN
+#define LED_Pin 7
+
+unsigned long lastButtonMillis = 0;
+bool lastButtonPressed = false;
+bool buttonPressed = false;
+#define debounceMillis 50
+#define Button_Pin 5
+
+bool armed = false;
+byte difficulty = 1;
+
+#define COMMAND_ARM 1
+#define COMMAND_DIFFICULTY 2
+
+#define DIFFICULTY_LOW 1
+#define DIFFICULTY_MED 2
+#define DIFFICULTY_HIGH 3
 
 void setup()
 {
-	// join i2c bus with address #8
-	//Wire.begin(I2CAddress);
-  	//Wire.onRequest(requestEvent);
+	pinMode(LED_Pin, OUTPUT);
+	pinMode(Button_Pin, INPUT);
+
+	Wire.begin(I2CAddress);
+	// enable broadcasts to be received
+	TWAR = (I2CAddress << 1) | 1;
+
+  	Wire.onRequest(reportStatus);
+	Wire.onReceive(receiveCommand);
 
 	Serial.begin(9600);
 
 	Serial.print("I2C Address: ");
 	Serial.println(I2CAddress);
 
-	pinMode(LED_Pin, OUTPUT);
-
 	randomSeed(analogRead(0));
 	int wordIndex = random(0, WordCount);
 	currentWord = words[wordIndex];
-
 	Serial.print("Current word: ");
 	Serial.println(currentWord);
 }
 
 void loop()
 {
+	if(!armed)
+		return;
+
 	updateLed();
+	handleButton();
 }
 
 void handleKnob() {
 	int position = knob.read();
+}
+
+void handleButton() {
+	bool pressed = digitalRead(Button_Pin) == HIGH;
+	
+	if(pressed != lastButtonPressed)
+	{
+		lastButtonMillis = millis();	
+		lastButtonPressed = pressed;
+		return;
+	}
+
+	if(millis() > (lastButtonMillis + debounceMillis))
+	{
+		if(pressed == buttonPressed)
+			return;
+		
+		buttonPressed = pressed;
+
+		if(!pressed)
+			return;
+		
+		// TODO: implement properly
+		
+		strikes++;
+		Serial.println("Striking");
+	}
 }
 
 void updateLed()
@@ -151,14 +202,43 @@ void updateLed()
 
 	// wait for dot/dash length of time
 	bool blipIsDot = currentMorseChar[currentMorseIndex] == '.';
-	Serial.println(blipIsDot ? "Dot" : "Dash");
 	nextMillis = millis() + (blipIsDot ? dotLength : dashLength);
 
 	ledOn = true;
 	digitalWrite(LED_Pin, HIGH);
 }
 
-void requestEvent() {
+void reportStatus() {
 	Wire.write(status);
 	Wire.write(strikes);
+}
+
+void arm()
+{
+	armed = true;
+}
+
+void receiveCommand (int howMany)
+{
+	// Master scanning for modules will cause this
+	if(howMany == 0)
+		return;
+	
+	byte command = Wire.read();
+
+	if(command == COMMAND_DIFFICULTY)
+	{
+		difficulty = Wire.read();
+		
+		Serial.print("Setting difficulty to: ");
+		Serial.println(difficulty);
+
+		if(armed)
+			arm();
+	}
+	else if(command == COMMAND_ARM)
+	{
+		Serial.println("Arming");
+		arm();
+	}
 }
