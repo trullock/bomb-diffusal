@@ -102,14 +102,8 @@ void setup()
 
 	Serial.begin(9600);
 
-	Serial.print("I2C Address: ");
+	Serial.print("Morse module joining I2C bus with address: ");
 	Serial.println(I2CAddress);
-
-	randomSeed(analogRead(0));
-	int wordIndex = random(0, WordCount);
-	currentWord = words[wordIndex];
-	Serial.print("Current word: ");
-	Serial.println(currentWord);
 }
 
 void loop()
@@ -119,6 +113,7 @@ void loop()
 
 	updateLed();
 	handleButton();
+	handleKnob();
 }
 
 void handleKnob() {
@@ -215,6 +210,12 @@ void reportStatus() {
 
 void arm()
 {
+	randomSeed(analogRead(0));
+	int wordIndex = random(0, WordCount);
+	currentWord = words[wordIndex];
+	Serial.print("Current word: ");
+	Serial.println(currentWord);
+
 	armed = true;
 }
 
