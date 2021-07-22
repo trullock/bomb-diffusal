@@ -2,13 +2,31 @@
 #include <Encoder.h>
 #include <Arduino.h>
 
+#define I2CAddress 8
+
+/// General Module details
+
 byte strikes = 0;
 byte status = 0;
 
-#define I2CAddress 8
+bool armed = false;
+byte difficulty = 1;
 
-Encoder knob(2, 3);
-int knobPosition;
+bool disarmed = false;
+#define Disarmed_LED_PIN 8
+
+byte pendingNotification = 0;
+
+#define COMMAND_ARM 1
+#define COMMAND_DIFFICULTY 2
+
+#define DIFFICULTY_LOW 1
+#define DIFFICULTY_MED 2
+#define DIFFICULTY_HIGH 3
+
+/// Specific Module details
+
+//// Morse details
 
 const String morseAlphabet[] = {
 	".-",	// a
@@ -49,16 +67,36 @@ const String morseAlphabet[] = {
 	"----."
 };
 
-int dotLength = 400;
-int dashLength = 800;
-int blipDelay = 200;
-int characterDelay = 1000;
-int loopDelay = 3000;
+// morse settings for Easy, Med, Hard
+const int dotLength[] = { 500, 400, 300 };
+const int dashLength[] = { 900, 800, 700 };
+const int blipDelay[] = { 300, 200, 100 };
+const int characterDelay[] = { 1200, 1000, 800 };
+const int loopDelay[]  = { 3000, 3000, 2500 };
 
-#define WordCount 2
-const String words[WordCount] = {
-	"alpha",
-	"bravo"
+#define WordCount 5
+const String words[3][WordCount] = {
+	{
+		"echo",
+		"golf",
+		"kilo",
+		"lima",
+		"mike"
+	},
+	{
+		"alpha",
+		"bravo",
+		"delta",
+		"tango",
+		"oscar",
+	},
+	{
+		"charlie",
+		"foxtrot",
+		"november",
+		"quebec",
+		"whiskey"
+	}
 };
 
 String currentWord;
@@ -67,30 +105,28 @@ int currentCharIndex = -1;
 String currentMorseChar;
 int currentMorseIndex = -1;
 
-bool ledOn = false;
+#define Morse_LED_Pin 7
+bool morseLedOn = false;
+
 unsigned long nextMillis = 0;
 
-#define LED_Pin 7
-
+//// Button details
 unsigned long lastButtonMillis = 0;
 bool lastButtonPressed = false;
 bool buttonPressed = false;
 #define debounceMillis 50
 #define Button_Pin 5
 
-bool armed = false;
-byte difficulty = 1;
+//// Knob details
+Encoder knob(2, 3);
+int knobPosition = 0;
+int frequency = 3550;
 
-#define COMMAND_ARM 1
-#define COMMAND_DIFFICULTY 2
 
-#define DIFFICULTY_LOW 1
-#define DIFFICULTY_MED 2
-#define DIFFICULTY_HIGH 3
 
 void setup()
 {
-	pinMode(LED_Pin, OUTPUT);
+	pinMode(Morse_LED_Pin, OUTPUT);
 	pinMode(Button_Pin, INPUT);
 
 	Wire.begin(I2CAddress);
@@ -108,6 +144,8 @@ void setup()
 
 void loop()
 {
+	renderFreq();
+
 	if(!armed)
 		return;
 
@@ -118,6 +156,16 @@ void loop()
 
 void handleKnob() {
 	int position = knob.read();
+	if(position != knobPosition)
+	{
+		knobPosition = position;
+		frequency = max(3500, min(3600, (position + 10) * 5));
+	}
+}
+
+void renderFreq()
+{
+	// TODO: implement
 }
 
 void handleButton() {
@@ -153,23 +201,23 @@ void updateLed()
 		return;
 
 	// If the LED is currently ON
-	if(ledOn) {
+	if(morseLedOn) {
 		// turn LED off
-		digitalWrite(LED_Pin, LOW);
-		ledOn = false;
+		digitalWrite(Morse_LED_Pin, LOW);
+		morseLedOn = false;
 
 		// if we're at the end of a character
 		if(currentMorseIndex == currentMorseChar.length() - 1)
 		{
 			// if it was the last char in the word
 			if(currentCharIndex == currentWord.length() - 1)
-				nextMillis = millis() + loopDelay;
+				nextMillis = millis() + loopDelay[difficulty];
 			else
-				nextMillis = millis() + characterDelay;
+				nextMillis = millis() + characterDelay[difficulty];
 		}
 		else
 		{
-			nextMillis = millis() + blipDelay;
+			nextMillis = millis() + blipDelay[difficulty];
 		}
 
 		currentMorseIndex++;
@@ -197,22 +245,24 @@ void updateLed()
 
 	// wait for dot/dash length of time
 	bool blipIsDot = currentMorseChar[currentMorseIndex] == '.';
-	nextMillis = millis() + (blipIsDot ? dotLength : dashLength);
+	nextMillis = millis() + (blipIsDot ? dotLength[difficulty] : dashLength[difficulty]);
 
-	ledOn = true;
-	digitalWrite(LED_Pin, HIGH);
+	morseLedOn = true;
+	digitalWrite(Morse_LED_Pin, HIGH);
 }
 
 void reportStatus() {
 	Wire.write(status);
 	Wire.write(strikes);
+	Wire.write(pendingNotification);
+	pendingNotification = 0;
 }
 
 void arm()
 {
 	randomSeed(analogRead(0));
 	int wordIndex = random(0, WordCount);
-	currentWord = words[wordIndex];
+	currentWord = words[difficulty][wordIndex];
 	Serial.print("Current word: ");
 	Serial.println(currentWord);
 

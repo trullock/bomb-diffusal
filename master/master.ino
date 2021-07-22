@@ -1,4 +1,8 @@
 #include <Wire.h>
+#include "SD.h"
+#include "TMRpcm.h"
+#include "SPI.h"
+
 
 byte moduleAddresses[127];
 int nModules = 0;
@@ -16,10 +20,16 @@ byte disarmedModules = 0;
 #define DIFFICULTY_MED 2
 #define DIFFICULTY_HIGH 3
 
+
+#define SD_ChipSelectPin 4
+TMRpcm tmrpcm;
+
+
 struct ModuleResults
 {
 	byte strikes = 0;
 	byte disarmedModules = 0;
+	byte notification = 0;
 };
 
 void setup()
@@ -29,6 +39,13 @@ void setup()
 	Wire.begin();
 	Serial.begin(9600);
 	
+	tmrpcm.speakerPin = 9;
+	if (!SD.begin(SD_ChipSelectPin))
+		Serial.println("SD fail");
+	
+
+	tmrpcm.play("music");
+
 	// let modules boot first
 	delay(100);
 
@@ -79,6 +96,11 @@ void loop()
 		Serial.println("New module disarming");
 	}
 
+	if(results.notification != 0)
+	{
+
+	}
+
 	strikes = results.strikes;
 	disarmedModules = results.disarmedModules;
 }
@@ -94,11 +116,13 @@ ModuleResults readModules()
 		Wire.requestFrom((int)moduleAddresses[i], 2);
 		byte status = Wire.read();
 		byte strikes = Wire.read();
+		byte notification = Wire.read();
 
 		if((status & STATUS_DISARMED) == STATUS_DISARMED)
 			results.disarmedModules++;
 
 		results.strikes += strikes;
+		results.notification |= notification;
 	}
 
 	return results;
