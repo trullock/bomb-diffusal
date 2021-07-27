@@ -3,6 +3,8 @@
 #include <MD_MAX72xx.h>
 #include <SPI.h>
 
+#include "button.h"
+
 #define I2CAddress 7
 
 /// General Module details
@@ -46,6 +48,8 @@ int posX = 0,
 int clue1X = 1, clue1Y = 4,
 	clue2X = 5, clue2Y = 7;
 int startX = 4, startY = 3;
+#define rows 8
+#define cols 8
 bool maze[8+7][8+7] = {
   //     |     |     |     |     |     |     |
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -67,15 +71,15 @@ bool maze[8+7][8+7] = {
 
 #define STATE_CLUE 1
 #define STATE_NAVIGATING 2
+#define STATE_STRIKING 3
 int state = 0;
 
 unsigned long nextMillis = 0;
 
-#define Button_Pin 1
-#define debounceMillis 50
-unsigned long lastButtonMillis = 0;
-bool lastButtonPressed = false;
-bool buttonPressed = false;
+Button btnNorth(1, INPUT);
+Button btnEast(2, INPUT);
+Button btnSouth(3, INPUT);
+Button btnWest(4, INPUT);
 
 /// Clue pulsing
 float cluePhase = 0;
@@ -107,20 +111,25 @@ void setup()
 
 void loop()
 {
+	// if (!armed)
+	// 	return;
+
+	// if (deactivated)
+	// 	return;
+
 	if(state == STATE_CLUE)
 	{
 		pulseClue();
 	}
 	else if(state == STATE_NAVIGATING)
 	{
+		handleMovement();
 		showLocation();
 	}
-
-	if(!armed)
-		return;
-
-	if(deactivated)
-		return;
+	else if(state == STATE_STRIKING)
+	{
+		showStrike();
+	}
 
 }
 
@@ -137,6 +146,72 @@ void showLocation() {
 	display.update();
 }
 
+void handleMovement() {
+	int newY = 0, newX = 0, mazeY = 0, mazeX = 0;
+
+	if (btnNorth.pressed())
+	{
+		mazeY = posY - 1;
+		mazeX = posX;
+		newY = posY - 2;
+		newX = posX;
+	}
+	else if (btnEast.pressed())
+	{
+		mazeY = posY;
+		mazeX = posX + 1;
+		newY = posY;
+		newX = posX + 2;
+	}
+	else if (btnSouth.pressed())
+	{
+		mazeY = posY + 1;
+		mazeX = posX;
+		newY = posY + 2;
+		newX = posX;
+	}
+	else if (btnWest.pressed())
+	{
+		mazeY = posY;
+		mazeX = posX - 1;
+		newY = posY;
+		newX = posX - 2;
+	}
+	else
+	{
+		return;
+	}
+
+	if (mazeY < 0 || mazeY >= rows || mazeX < 0 || mazeX >= cols)
+	{
+		// oob crash
+		strike();
+	}
+	else if (maze[mazeY][mazeX] == 1)
+	{
+		// wall crash
+		strike();
+	}
+	else
+	{
+		posX = newX;
+		posY = newY;
+	}
+}
+
+void strike() {
+	state = STATE_STRIKING;
+
+	strikes++
+}
+
+void showStrike() {
+	// todo: flash or something
+
+	// go back to navigation afterwards
+	state = STATE_NAVIGATING;
+}
+
 void pulseClue() {
 	if(nextPulseMillis > millis())
 		return;
@@ -151,34 +226,6 @@ void pulseClue() {
 
 	display.control(2, clueIntensity);
 	display.update();
-}
-
-void handleButton() {
-	bool pressed = digitalRead(Button_Pin) == HIGH;
-	
-	if(pressed != lastButtonPressed)
-	{
-		lastButtonMillis = millis();	
-		lastButtonPressed = pressed;
-		return;
-	}
-
-	if(millis() > (lastButtonMillis + debounceMillis))
-	{
-		if(pressed == buttonPressed)
-			return;
-		
-		buttonPressed = pressed;
-
-		if(!pressed)
-			return;
-		
-		// TODO: implement
-
-		// else incorrect
-
-		strikes++;
-	}
 }
 
 void reportStatus() {
