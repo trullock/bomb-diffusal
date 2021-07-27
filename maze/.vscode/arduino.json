@@ -1,0 +1,8 @@
+{
+    "board": "arduino:avr:nano",
+    "path": "C:/Arduino",
+    "sketch": "maze.ino",
+    "port": "COM3",
+    "output": "build",
+    "configuration": "cpu=atmega328old"
+}

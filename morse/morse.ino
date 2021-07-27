@@ -12,17 +12,20 @@ byte status = 0;
 bool armed = false;
 byte difficulty = 1;
 
-bool disarmed = false;
+bool deactivated = false;
 #define Disarmed_LED_PIN 8
 
 byte pendingNotification = 0;
 
 #define COMMAND_ARM 1
 #define COMMAND_DIFFICULTY 2
+#define COMMAND_EXPLODE 3
 
 #define DIFFICULTY_LOW 1
 #define DIFFICULTY_MED 2
 #define DIFFICULTY_HIGH 3
+
+#define NOTIFICATION_DISARMED 1
 
 /// Specific Module details
 
@@ -99,11 +102,14 @@ const String words[3][WordCount] = {
 	}
 };
 
+int currentWordIndex = 0;
 String currentWord;
 char currentChar;
 int currentCharIndex = -1;
 String currentMorseChar;
 int currentMorseIndex = -1;
+
+int correctKnobPosition = 0;
 
 #define Morse_LED_Pin 7
 bool morseLedOn = false;
@@ -144,9 +150,12 @@ void setup()
 
 void loop()
 {
-	renderFreq();
+	updateDisplay();
 
 	if(!armed)
+		return;
+
+	if(deactivated)
 		return;
 
 	updateLed();
@@ -157,15 +166,25 @@ void loop()
 void handleKnob() {
 	int position = knob.read();
 	if(position != knobPosition)
-	{
 		knobPosition = position;
-		frequency = max(3500, min(3600, (position + 10) * 5));
-	}
+	
 }
 
-void renderFreq()
+void updateDisplay()
 {
+	if(!armed)
+	{
+		return;
+	}
+
+	if(deactivated)
+	{
+		return;
+	}
+
+	int frequency = 3000 + (knobPosition * 50);
 	// TODO: implement
+	//required range is 15*3
 }
 
 void handleButton() {
@@ -188,10 +207,16 @@ void handleButton() {
 		if(!pressed)
 			return;
 		
-		// TODO: implement properly
-		
+		// If correct answer
+		if(knobPosition == correctKnobPosition)
+		{
+			deactivated = true;
+			return;
+		}
+
+		// else incorrect
+
 		strikes++;
-		Serial.println("Striking");
 	}
 }
 
@@ -261,12 +286,19 @@ void reportStatus() {
 void arm()
 {
 	randomSeed(analogRead(0));
-	int wordIndex = random(0, WordCount);
-	currentWord = words[difficulty][wordIndex];
+	currentWordIndex = random(0, WordCount);
+	currentWord = words[difficulty][currentWordIndex];
 	Serial.print("Current word: ");
 	Serial.println(currentWord);
+	
+	correctKnobPosition = difficulty * (currentWordIndex + 1) * 3;
 
 	armed = true;
+}
+
+void explode()
+{
+	// TODO:
 }
 
 void receiveCommand (int howMany)
@@ -291,5 +323,9 @@ void receiveCommand (int howMany)
 	{
 		Serial.println("Arming");
 		arm();
+	}
+	else if(command == COMMAND_EXPLODE)
+	{
+		explode();
 	}
 }

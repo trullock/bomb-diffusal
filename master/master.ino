@@ -88,6 +88,7 @@ void loop()
 	{
 		// new strike
 		Serial.println("New strike");
+		tmrpcm.play("strike.wav");
 	}
 
 	if(results.disarmedModules != disarmedModules)
