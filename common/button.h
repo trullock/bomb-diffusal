@@ -1,45 +1,60 @@
+#include <Arduino.h>
 
 #define debounceMillis 50
+#define BUTTONSTATE_PRESSED 1
+#define BUTTONSTATE_RELEASED 2
 
 class Button {
 
-	int pin = 0;
-	int mode = 0;
+	int pin;
+	int mode;
 	unsigned long lastMillis = 0;
-	bool lastPressed = false;
+	bool lastPressed = 0;
 	bool pressed = false;
 	bool read = false;
 
-	void update() {
-		bool pressed = digitalRead(this->pin) == this->mode == INPUT ? HIGH : LOW;
-		
-		if(pressed != lastPressed)
+	void updateState()
+	{
+		bool pressed = digitalRead(this->pin) == mode == INPUT ? HIGH : LOW;
+
+		if (pressed != this->lastPressed)
 		{
-			lastMillis = millis();	
-			lastPressed = pressed;
+			this->lastMillis = millis();
+			this->lastPressed = pressed;
 			return;
 		}
 
-		if(millis() > (lastMillis + debounceMillis))
+		if (millis() > (this->lastMillis + debounceMillis))
 		{
-			if(pressed == this->pressed)
+			if (pressed == this->pressed)
 				return;
-			
+
 			this->pressed = pressed;
 			this->read = false;
 		}
 	}
 
 public:
-	Button(int pin, int mode)
-	{
-		pinMode(pin, mode);
+	Button(int pin, int mode) {
 		this->pin = pin;
 		this->mode = mode;
+		
+		pinMode(pin, mode);
 	}
 
 	bool pressed() {
-		this->update();
-		return this->pressed;
+		this->updateState();
+		if(this->read)
+			return false;
+		this->read = true;
+		return pressed;
 	}
-}
+
+	bool released() {
+		this->updateState();
+		if(this->read)
+			return false;
+		this->read = true;
+		return !pressed;
+	}
+};

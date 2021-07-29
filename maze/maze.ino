@@ -49,10 +49,6 @@ bool maze[8+7][8+7] = {
 
 unsigned long nextMillis = 0;
 
-Button btnNorth(1, INPUT);
-Button btnEast(2, INPUT);
-Button btnSouth(3, INPUT);
-Button btnWest(4, INPUT);
 
 
 void setup()

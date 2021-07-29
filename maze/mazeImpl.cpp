@@ -20,6 +20,10 @@ class Maze : public Slave {
 	// https://majicdesigns.github.io/MD_MAX72XX/class_m_d___m_a_x72_x_x.html
 	MD_MAX72XX display;//(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 
+	Button btnNorth(1, INPUT);
+	Button btnEast(2, INPUT);
+	Button btnSouth(3, INPUT);
+	Button btnWest(4, INPUT);
 
 	/// Clue pulsing
 	float cluePhase = 0;
