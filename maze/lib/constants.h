@@ -1,5 +1,5 @@
-#ifndef commands_h
-#define commands_h
+#ifndef constants_h
+#define constants_h
 
 #define STATE_STRIKING 255
 #define STATE_EXPLODING 254

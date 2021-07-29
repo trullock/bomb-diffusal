@@ -1,7 +1,6 @@
 #include <Wire.h>
 #include <Arduino.h>
 #include "slave.h"
-#include "../constants.h"
 
 Slave* Slave::self = nullptr;
 

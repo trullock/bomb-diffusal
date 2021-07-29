@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "../lib/constants.h"
+#include "../constants.h"
 
 class Slave {
 
