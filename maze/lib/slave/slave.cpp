@@ -1,7 +1,9 @@
 #include <Wire.h>
 #include <Arduino.h>
 #include "slave.h"
-#include "messages.h"
+#include "../constants.h"
+
+Slave* Slave::self = nullptr;
 
 Slave::Slave(int i2cAddress) {
 	self = this;
@@ -27,27 +29,48 @@ void Slave::receiveCommandWrapper(int x) {
 }
 
 void Slave::reportStatus() {
-	Wire.write(status);
-	Wire.write(strikes);
-	Wire.write(pendingNotification);
-	pendingNotification = 0;
+	Wire.write(this->state);
+	Wire.write(this->strikes);
+	Wire.write(this->pendingNotification);
+	this->pendingNotification = 0;
 }
 
 void Slave::reportStrike() {
-	strikes++;
+	// The master will query this and relay it back as a Strike() instruction
+	this->strikes++;
 }
 
 void Slave::arm()
 {
-	armed = true;
+	Serial.println("Arming");
 }
 
 void Slave::explode()
 {
-	// TODO:
+	Serial.println("Exploding");
+	this->state = STATE_EXPLODING;
 }
 
-void Slave::receiveCommand (int howMany)
+void Slave::strike()
+{
+	Serial.println("Striking");
+	this->state = STATE_STRIKING;
+}
+
+void Slave::deactivate()
+{
+	this->state = STATE_DEACTIVATED;
+}
+
+void Slave::setDifficulty(byte diff)
+{
+	Serial.print("Setting difficulty to: ");
+	Serial.println(diff);
+
+	this->difficulty = diff;
+}
+
+void Slave::receiveCommand(int howMany)
 {
 	// Master scanning for modules will cause this
 	if(howMany == 0)
@@ -56,23 +79,11 @@ void Slave::receiveCommand (int howMany)
 	byte command = Wire.read();
 
 	if(command == COMMAND_DIFFICULTY)
-	{
-		difficulty = Wire.read();
-		
-		Serial.print("Setting difficulty to: ");
-		Serial.println(difficulty);
-
-		if(armed)
-			arm();
-	}
+		this->setDifficulty(Wire.read());
 	else if(command == COMMAND_ARM)
-	{
-		Serial.println("Arming");
-		arm();
-	}
-	else if(command == COMMAND_EXPLODE)
-	{
-		Serial.println("Exploding")
-		explode();
-	}
+		this->arm();
+	else if (command == COMMAND_STRIKE)
+		this->strike();
+	else if (command == COMMAND_EXPLODE)
+		this->explode();
 }

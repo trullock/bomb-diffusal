@@ -43,7 +43,7 @@ Blog: https://tmrh20.blogspot.com/
 
 //#define debug
 /****************** ADVANCED USER DEFINES ********************************
-   See https://github.com/TMRh20/TMRpcm/wiki for info on usage
+   See https://github.com/TMRh20/TMRpcm/wiki for info on usage */
 
    /* Use the SDFAT library from http://code.google.com/p/sdfatlib/            */
 //#define SDFAT

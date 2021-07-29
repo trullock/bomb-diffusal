@@ -1,8 +1,7 @@
 #include <Arduino.h>
 
-#define debounceMillis 50
-#define BUTTONSTATE_PRESSED 1
-#define BUTTONSTATE_RELEASED 2
+#ifndef Button_h
+#define Button_h
 
 class Button {
 
@@ -11,11 +10,11 @@ class Button {
 	unsigned long lastMillis = 0;
 	bool lastPressed = 0;
 	bool isPressed = false;
-	bool read = false;
+	bool read = true;
 
 	void updateState()
 	{
-		bool pressed = digitalRead(this->pin) == mode == INPUT ? HIGH : LOW;
+		bool pressed = digitalRead(this->pin) == (mode == INPUT ? HIGH : LOW);
 
 		if (pressed != this->lastPressed)
 		{
@@ -24,7 +23,7 @@ class Button {
 			return;
 		}
 
-		if (millis() > (this->lastMillis + debounceMillis))
+		if (millis() > (this->lastMillis + 50))
 		{
 			if (pressed == this->isPressed)
 				return;
@@ -44,17 +43,23 @@ public:
 
 	bool pressed() {
 		this->updateState();
+
 		if(this->read)
 			return false;
+
 		this->read = true;
 		return isPressed;
 	}
 
 	bool released() {
 		this->updateState();
+		
 		if(this->read)
 			return false;
+
 		this->read = true;
 		return !isPressed;
 	}
 };
+
+#endif

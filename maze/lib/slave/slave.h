@@ -1,5 +1,6 @@
-#include <Wire.h>
 #include <Arduino.h>
+#include <Wire.h>
+#include "../lib/constants.h"
 
 class Slave {
 
@@ -15,19 +16,19 @@ protected:
 
 	byte pendingNotification = 0;
 	byte strikes = 0;
-	byte status = 0;
-	
-	bool armed = false;
+	byte state = STATE_DISARMED;
 	byte difficulty = 1;
 
-	bool deactivated = false;
-
 	virtual void reportStrike();
+
+	virtual void arm();
+	virtual void strike();
+	virtual void explode();
+	virtual void deactivate();
+	virtual void setDifficulty(byte difficulty);
 
 public:
 
 	Slave(int i2cAddress);
-
-	virtual void arm();
-	virtual void explode();	
+	virtual void loop() = 0;
 };
