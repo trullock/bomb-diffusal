@@ -12,7 +12,7 @@ class Slave {
 	void receiveCommand(int howMany);
 
 	byte commandBuffer[32];
-	byte commandBufferLength = 0;
+	volatile byte commandBufferLength = 0;
 
 protected:
 	int i2cAddress = 0;
