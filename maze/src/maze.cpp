@@ -49,7 +49,7 @@ class Maze : public Slave {
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	};
 
-	void arm()
+	void arm() override
 	{
 		Slave::arm();
 

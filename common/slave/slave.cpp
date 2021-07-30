@@ -28,13 +28,16 @@ void Slave::receiveCommandWrapper(int x) {
 }
 
 void Slave::reportStatus() {
+	
 	Wire.write(this->state);
 	Wire.write(this->strikes);
 	Wire.write(this->pendingNotification);
 	this->pendingNotification = 0;
 }
 
-void Slave::reportStrike() {
+void Slave::reportStrike()
+{
+	Serial.println("Reporting strike");
 	// The master will query this and relay it back as a Strike() instruction
 	this->strikes++;
 }
@@ -58,6 +61,7 @@ void Slave::strike()
 
 void Slave::deactivate()
 {
+	Serial.println("Deactivated");
 	this->state = STATE_DEACTIVATED;
 }
 
@@ -76,6 +80,9 @@ void Slave::receiveCommand(int howMany)
 		return;
 	
 	byte command = Wire.read();
+
+	Serial.print("Received Command: ");
+	Serial.println(command);
 
 	if(command == COMMAND_DIFFICULTY)
 		this->setDifficulty(Wire.read());

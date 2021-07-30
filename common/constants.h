@@ -1,10 +1,13 @@
 #ifndef constants_h
 #define constants_h
 
-#define STATE_STRIKING 255
-#define STATE_EXPLODING 254
-#define STATE_DEACTIVATED 253
-#define STATE_DISARMED 252
+// pseudo state to represent I2C error
+#define STATE_NONE 255
+
+#define STATE_STRIKING 254
+#define STATE_EXPLODING 253
+#define STATE_DEACTIVATED 252
+#define STATE_DISARMED 251
 
 #define COMMAND_ARM 1
 #define COMMAND_DIFFICULTY 2
@@ -17,5 +20,6 @@
 
 #define NOTIFICATION_DISARMED 1
 
+#define STRIKE_DURATION_MS 3000
 
 #endif

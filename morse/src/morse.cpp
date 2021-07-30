@@ -2,10 +2,10 @@
 #include <Encoder.h>
 #include "../lib/button.h"
 
-#define STATE_RECEIVING 1
+#define STATE_MORSING 1
 
 #define WordCount 5
-#define Morse_LED_Pin 7
+#define Morse_LED_Pin 5
 
 class Morse : public Slave {
 
@@ -99,7 +99,7 @@ class Morse : public Slave {
 	int knobPosition = 0;
 	int frequency = 3550;
 
-	void setDifficulty(int diff)
+	void setDifficulty(byte diff) override
 	{
 		Slave::setDifficulty(diff);
 
@@ -116,11 +116,14 @@ class Morse : public Slave {
 	{
 		Slave::arm();
 
-		this->state = STATE_RECEIVING;
+		this->state = STATE_MORSING;
 	}
 
 	void strike() override {
 		Slave::strike();
+
+		this->nextMillis = millis() + STRIKE_DURATION_MS;
+		this->setLed(true);
 	}
 
 	void explode() override
@@ -132,24 +135,6 @@ class Morse : public Slave {
 		Slave::deactivate();
 	}
 
-public:
-	Morse() : Slave(6), btnEnter(5, INPUT), knob(2, 3)
-	{
-		pinMode(Morse_LED_Pin, OUTPUT);
-	}
-
-	void loop()
-	{
-		if(this->state == STATE_RECEIVING)
-		{
-			this->handleButton();
-			this->handleKnob();
-
-			this->updateLed();
-			this->updateDisplay();
-		}
-	}
-
 	void handleKnob()
 	{
 		int position = knob.read();
@@ -159,9 +144,9 @@ public:
 
 	void handleButton()
 	{
-		if(!this->btnEnter.pressed())
+		if (!this->btnEnter.pressed())
 			return;
-		
+
 		if (knobPosition == correctKnobPosition)
 		{
 			this->deactivate();
@@ -234,7 +219,39 @@ public:
 		// wait for dot/dash length of time
 		bool blipIsDot = currentMorseChar[currentMorseIndex] == '.';
 		nextMillis = millis() + (blipIsDot ? dotLength[difficulty] : dashLength[difficulty]);
-		
+
 		this->setLed(true);
+	}
+
+public:
+	Morse() : 
+		Slave(5), 
+		btnEnter(7, INPUT), 
+		knob(2, 3)
+	{
+		pinMode(Morse_LED_Pin, OUTPUT);
+	}
+
+	void loop()
+	{
+		if(this->state == STATE_MORSING)
+		{
+			this->handleButton();
+			this->handleKnob();
+
+			this->updateLed();
+			this->updateDisplay();
+		}
+		else if(this->state == STATE_STRIKING)
+		{
+			if(millis() >= nextMillis)
+			{
+				this->state = STATE_MORSING;
+				this->setLed(false);
+				this->currentMorseChar = "";
+				this->currentCharIndex = -1;
+				this->nextMillis = millis() + this->loopDelay[this->difficulty];
+			}
+		}
 	}
 };

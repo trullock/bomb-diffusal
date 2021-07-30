@@ -45,10 +45,13 @@ ModuleResults readModules()
 
 	for (byte i = 0; i < moduleCount; i++)
 	{
-		Wire.requestFrom((int)moduleAddresses[i], 2);
+		Wire.requestFrom((int)moduleAddresses[i], 3);
 		byte state = Wire.read();
 		byte strikes = Wire.read();
 		byte notification = Wire.read();
+
+		if(state == STATE_NONE)
+			continue;
 
 		if (state == STATE_DEACTIVATED)
 			results.deactivatedModules++;
@@ -105,7 +108,7 @@ void setup()
 	if (!SD.begin(SD_ChipSelectPin))
 		Serial.println("SD fail");
 
-	tmrpcm.play("music");
+	//tmrpcm.play("music");
 
 	// let modules boot first
 	delay(100);
