@@ -44,6 +44,11 @@ void Slave::reportStrike()
 	this->strikes++;
 }
 
+void Slave::loop()
+{
+	this->handleCommand();
+}
+
 void Slave::arm()
 {
 	Serial.println("Arming");

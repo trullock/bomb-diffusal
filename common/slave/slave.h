@@ -35,5 +35,5 @@ protected:
 public:
 
 	Slave(int i2cAddress);
-	virtual void loop() = 0;
+	virtual void loop();
 };

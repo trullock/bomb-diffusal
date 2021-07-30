@@ -177,7 +177,9 @@ public:
 		this->display->update();
 	}
 
-	void loop() {
+	void loop()
+	{
+		Slave::loop();
 
 		if (state == STATE_CLUE || state == STATE_STRIKING || state == STATE_EXPLODING)
 		{

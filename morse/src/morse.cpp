@@ -282,7 +282,7 @@ public:
 
 	void loop()
 	{
-		this->handleCommand();
+		Slave::loop();
 
 		if(this->state == STATE_MORSING)
 		{
