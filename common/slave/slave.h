@@ -11,6 +11,9 @@ class Slave {
 	void reportStatus();
 	void receiveCommand(int howMany);
 
+	byte commandBuffer[32];
+	byte commandBufferLength = 0;
+
 protected:
 	int i2cAddress = 0;
 
@@ -18,6 +21,8 @@ protected:
 	byte strikes = 0;
 	byte state = STATE_DISARMED;
 	byte difficulty = 1;
+
+	void handleCommand();
 
 	virtual void reportStrike();
 

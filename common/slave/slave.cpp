@@ -12,6 +12,8 @@ Slave::Slave(int i2cAddress) {
 	// enable broadcasts to be received
 	TWAR = (this->i2cAddress << 1) | 1;
 
+	memset(this->commandBuffer, 0, 32);
+
 	Wire.onRequest(Slave::reportStatusWrapper);
 	Wire.onReceive(Slave::receiveCommandWrapper);
 
@@ -78,18 +80,37 @@ void Slave::receiveCommand(int howMany)
 	// Master scanning for modules will cause this
 	if(howMany == 0)
 		return;
-	
-	byte command = Wire.read();
 
-	Serial.print("Received Command: ");
-	Serial.println(command);
+	this->commandBuffer[this->commandBufferLength] = Wire.read();
 
-	if(command == COMMAND_DIFFICULTY)
-		this->setDifficulty(Wire.read());
-	else if(command == COMMAND_ARM)
-		this->arm();
-	else if (command == COMMAND_STRIKE)
-		this->strike();
-	else if (command == COMMAND_EXPLODE)
-		this->explode();
+	if(howMany == 2)
+		this->commandBuffer[this->commandBufferLength + 1] = Wire.read();
+
+	this->commandBufferLength += 2;
+}
+
+void Slave::handleCommand()
+{
+	if (this->commandBufferLength == 0)
+		return;
+
+	for(byte i = 0; i < this->commandBufferLength; i += 2)
+	{
+		byte command = this->commandBuffer[i];
+		byte data = this->commandBuffer[i + 1];
+
+		Serial.print("Received Command: ");
+		Serial.println(command);
+
+		if (command == COMMAND_DIFFICULTY)
+			this->setDifficulty(data);
+		else if (command == COMMAND_ARM)
+			this->arm();
+		else if (command == COMMAND_STRIKE)
+			this->strike();
+		else if (command == COMMAND_EXPLODE)
+			this->explode();
+	}
+
+	this->commandBufferLength = 0;
 }

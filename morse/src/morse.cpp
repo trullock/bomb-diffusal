@@ -1,6 +1,7 @@
 #include "../lib/slave/slave.h"
 #include <Encoder.h>
 #include "../lib/button.h"
+#include "../lib/LedControl/LedControl.h"
 
 #define STATE_MORSING 1
 
@@ -54,6 +55,8 @@ class Morse : public Slave {
 	const int blipDelay[3] = {300, 200, 100};
 	const int characterDelay[3] = {1200, 1000, 800};
 	const int loopDelay[3] = {3000, 3000, 2500};
+	const int freqMultiplier[3] { 100, 200, 300};
+	const int startFreq[3] { 2250, 2250, 2250 };
 
 	const String words[3][WordCount] = {
 		{
@@ -86,7 +89,6 @@ class Morse : public Slave {
 	String currentMorseChar;
 	int currentMorseIndex = -1;
 
-	int correctKnobPosition = 0;
 
 	unsigned long nextMillis = 0;
 	bool morseLedOn = false;
@@ -97,7 +99,12 @@ class Morse : public Slave {
 	//// Knob details
 	Encoder knob;
 	int knobPosition = 0;
-	int frequency = 3550;
+	int correctFrequency = 0;
+	int currentFrequency = 0;
+	const int knobStep[3] = {10, 5, 1};
+
+	// Display
+	LedControl display;
 
 	void setDifficulty(byte diff) override
 	{
@@ -109,7 +116,11 @@ class Morse : public Slave {
 		Serial.print("Current word: ");
 		Serial.println(this->currentWord);
 
-		this->correctKnobPosition = difficulty * (this->currentWordIndex + 1) * 3;
+		this->currentFrequency = startFreq[difficulty];
+		this->correctFrequency = startFreq[difficulty] + (this->currentWordIndex + 1) * freqMultiplier[difficulty];
+
+		Serial.print("Correct frequency: ");
+		Serial.println(this->correctFrequency);
 	}
 
 	void arm()
@@ -124,6 +135,11 @@ class Morse : public Slave {
 
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
 		this->setLed(true);
+
+		display.setDigit(0, 0, 8, true);
+		display.setDigit(0, 1, 8, true);
+		display.setDigit(0, 2, 8, true);
+		display.setDigit(0, 3, 8, true);
 	}
 
 	void explode() override
@@ -131,15 +147,27 @@ class Morse : public Slave {
 		Slave::explode();
 	}
 
-	void deactivate() override {
+	void deactivate() override
+	{
 		Slave::deactivate();
+
+		setLed(false);
+		display.setIntensity(0, 1);
+		display.setChar(0, 0, '-', false);
+		display.setChar(0, 1, '-', false);
+		display.setChar(0, 2, '-', false);
+		display.setChar(0, 3, '-', false);
 	}
 
 	void handleKnob()
 	{
 		int position = knob.read();
 		if (position != knobPosition)
+		{
 			knobPosition = position;
+
+			currentFrequency = startFreq[difficulty] + position * knobStep[difficulty];
+		}
 	}
 
 	void handleButton()
@@ -147,7 +175,7 @@ class Morse : public Slave {
 		if (!this->btnEnter.pressed())
 			return;
 
-		if (knobPosition == correctKnobPosition)
+		if (currentFrequency == correctFrequency)
 		{
 			this->deactivate();
 			return;
@@ -158,9 +186,15 @@ class Morse : public Slave {
 
 	void updateDisplay()
 	{
-		int frequency = 3000 + (knobPosition * 50);
-		// TODO: implement
-		//required range is 15*3
+		int thousands = currentFrequency / 1000;
+		int hundreds = (currentFrequency - thousands * 1000) / 100;
+		int tens = (currentFrequency - thousands * 1000 - hundreds * 100) / 10;
+		int ones = currentFrequency % 10;
+
+		display.setDigit(0, 0, ones, false);
+		display.setDigit(0, 1, tens, false);
+		display.setDigit(0, 2, hundreds, false);
+		display.setDigit(0, 3, thousands, true);
 	}
 
 	void setLed(bool on)
@@ -223,35 +257,45 @@ class Morse : public Slave {
 		this->setLed(true);
 	}
 
+	void stopStriking()
+	{
+		this->state = STATE_MORSING;
+		this->setLed(false);
+		this->currentMorseChar = "";
+		this->currentCharIndex = -1;
+		this->nextMillis = millis() + this->loopDelay[this->difficulty];
+	}
+
 public:
 	Morse() : 
 		Slave(5), 
-		btnEnter(7, INPUT), 
-		knob(2, 3)
+		btnEnter(8, INPUT_PULLUP), 
+		knob(6, 7),
+		display(12, 13, 10, 1)
 	{
 		pinMode(Morse_LED_Pin, OUTPUT);
+
+		this->display.shutdown(0, false);
+		this->display.setIntensity(0, 8);
+		this->display.clearDisplay(0);
 	}
 
 	void loop()
 	{
+		this->handleCommand();
+
 		if(this->state == STATE_MORSING)
 		{
-			this->handleButton();
-			this->handleKnob();
-
 			this->updateLed();
 			this->updateDisplay();
+
+			this->handleButton();
+			this->handleKnob();
 		}
 		else if(this->state == STATE_STRIKING)
 		{
 			if(millis() >= nextMillis)
-			{
-				this->state = STATE_MORSING;
-				this->setLed(false);
-				this->currentMorseChar = "";
-				this->currentCharIndex = -1;
-				this->nextMillis = millis() + this->loopDelay[this->difficulty];
-			}
+				this->stopStriking();
 		}
 	}
 };
