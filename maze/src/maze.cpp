@@ -22,7 +22,9 @@ class Maze : public Slave {
 
 	// Positioning
 	int posX = 0,
-		posY = 0;
+		posY = 0,
+		finishX = 0,
+		finishY = 0;
 
 	// Maze details
 	int clue1X = 1, clue1Y = 4,
@@ -30,24 +32,53 @@ class Maze : public Slave {
 	int startX = 4, startY = 3;
 	#define rows 8
 	#define cols 8
-	bool maze[8 + 7][8 + 7] = {
-		//     |     |     |     |     |     |     |
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	// 0 = blank
+	// 1 = wall
+	// 2 = start
+	// 3 = finish
+	const byte maze[1][8 + 7][8 + 7] = {
+		{
+			//  |     |     |     |     |     |     |
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // -
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+		}
 	};
+
+	void setDifficulty(byte diff) override 
+	{
+		Slave::setDifficulty(diff);
+
+		randomSeed(millis());
+		int r = random(0, 0);
+		for(byte y = 0; y < rows + rows - 1; y++)
+		for(byte x = 0; x < cols + cols - 1; x++)
+		{
+			if(maze[r][y][x] == 2)
+			{
+				posX = x;
+				posY = y;
+			}
+			else if(maze[r][y][x] == 3)
+			{
+				finishX = x;
+				finishY = y;
+			}
+		}
+	}
 
 	void arm() override
 	{
@@ -76,6 +107,14 @@ class Maze : public Slave {
 
 		display->control(MD_MAX72XX::controlRequest_t::INTENSITY, clueIntensity);
 		display->update();
+	}
+
+	void handleStartNavigating()
+	{
+		if(this->btnNorth->pressed() || this->btnEast->pressed() || this->btnSouth->pressed() || this->btnWest->pressed())
+		{
+			this->state = STATE_NAVIGATING;
+		}
 	}
 
 	void handleMovement()
@@ -120,7 +159,7 @@ class Maze : public Slave {
 			// oob crash
 			reportStrike();
 		}
-		else if (maze[mazeY][mazeX] == 1)
+		else if (maze[0][mazeY][mazeX] == 1)
 		{
 			// wall crash
 			reportStrike();
@@ -133,6 +172,11 @@ class Maze : public Slave {
 			display->clear();
 			display->setPoint(posX, posY, true);
 			display->update();
+
+			if(posX == finishX && posY == finishY)
+			{
+				this->state = STATE_DEACTIVATED;
+			}
 		}
 	}
 
@@ -184,6 +228,7 @@ public:
 		if (state == STATE_CLUE || state == STATE_STRIKING || state == STATE_EXPLODING)
 		{
 			this->pulseDisplay();
+			this->handleStartNavigating();
 		}
 		else if(state == STATE_NAVIGATING)
 		{
