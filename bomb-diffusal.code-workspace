@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"name": "common",
+			"path": "common"
+		},
+		{
+			"name": "master",
+			"path": "master"
+		},
+		{
+			"name": "memory",
+			"path": "memory"
+		},
+		{
+			"name": "morse",
+			"path": "morse"
+		},
+		{
+			"name": "maze",
+			"path": "maze"
+		}
+	],
+	"settings": {}
+}
