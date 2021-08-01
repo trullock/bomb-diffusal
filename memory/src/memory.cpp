@@ -13,7 +13,7 @@ class Memory : public Slave {
 
 	unsigned long nextMillis = 0;
 
-	Button *btn1;
+	Button* btn1;
 	Button* btn2;
 	Button* btn3;
 	Button* btn4;
@@ -36,16 +36,31 @@ class Memory : public Slave {
 
 		randomSeed(analogRead(0));
 		
-		this->nextStage(STATE_STAGE1);
+		this->changeStage(STATE_STAGE1);
 	}
 
-	void nextStage(byte stage)
+	void changeStage(byte stage)
 	{
+		if(stage > this->stages)
+		{
+			deactivate();
+			return;
+		}
+
 		this->state = stage;
 
 		this->currentClue = random(0, 4);
+
+		Serial.print("Current stage: ");
+		Serial.println(this->state);
+
 		Serial.print("Current clue: ");
 		Serial.println(this->currentClue);
+	}
+
+	void updateStageDisplay()
+	{
+		// TODO implement me
 	}
 
 	void arm()
@@ -107,25 +122,25 @@ class Memory : public Slave {
 		{
 			case 1:
 				if(btnPressed == 2)
-					this->nextStage(STATE_STAGE2);
+					this->changeStage(STATE_STAGE2);
 				else
 					reportStrike();
 				break;
 			case 2:
 				if (btnPressed == 2)
-					this->nextStage(STATE_STAGE2);
+					this->changeStage(STATE_STAGE2);
 				else
 					reportStrike();
 				break;
 			case 3:
 				if (btnPressed == 3)
-					this->nextStage(STATE_STAGE2);
+					this->changeStage(STATE_STAGE2);
 				else
 					reportStrike();
 				break;
 			case 4:
 				if (btnPressed == 4)
-					this->nextStage(STATE_STAGE2);
+					this->changeStage(STATE_STAGE2);
 				else
 					reportStrike();
 				break;
@@ -138,25 +153,25 @@ class Memory : public Slave {
 		{
 		case 1:
 			if (btnPressed == 3)
-				this->nextStage(STATE_STAGE3);
+				this->changeStage(STATE_STAGE3);
 			else
 				reportStrike();
 			break;
 		case 2:
 			if (btnPressed == 2)
-				this->nextStage(STATE_STAGE3);
+				this->changeStage(STATE_STAGE3);
 			else
 				reportStrike();
 			break;
 		case 3:
 			if (btnPressed == 1)
-				this->nextStage(STATE_STAGE3);
+				this->changeStage(STATE_STAGE3);
 			else
 				reportStrike();
 			break;
 		case 4:
 			if (btnPressed == 4)
-				this->nextStage(STATE_STAGE3);
+				this->changeStage(STATE_STAGE3);
 			else
 				reportStrike();
 			break;
@@ -169,25 +184,25 @@ class Memory : public Slave {
 		{
 		case 1:
 			if (btnPressed == 2)
-				this->nextStage(STATE_STAGE4);
+				this->changeStage(STATE_STAGE4);
 			else
 				reportStrike();
 			break;
 		case 2:
 			if (btnPressed == 2)
-				this->nextStage(STATE_STAGE4);
+				this->changeStage(STATE_STAGE4);
 			else
 				reportStrike();
 			break;
 		case 3:
 			if (btnPressed == 3)
-				this->nextStage(STATE_STAGE4);
+				this->changeStage(STATE_STAGE4);
 			else
 				reportStrike();
 			break;
 		case 4:
 			if (btnPressed == 3)
-				this->nextStage(STATE_STAGE4);
+				this->changeStage(STATE_STAGE4);
 			else
 				reportStrike();
 			break;
@@ -200,25 +215,25 @@ class Memory : public Slave {
 		{
 		case 1:
 			if (btnPressed == 2)
-				this->nextStage(STATE_STAGE5);
+				this->changeStage(STATE_STAGE5);
 			else
 				reportStrike();
 			break;
 		case 2:
 			if (btnPressed == 1)
-				this->nextStage(STATE_STAGE5);
+				this->changeStage(STATE_STAGE5);
 			else
 				reportStrike();
 			break;
 		case 3:
 			if (btnPressed == 1)
-				this->nextStage(STATE_STAGE5);
+				this->changeStage(STATE_STAGE5);
 			else
 				reportStrike();
 			break;
 		case 4:
 			if (btnPressed == 4)
-				this->nextStage(STATE_STAGE5);
+				this->changeStage(STATE_STAGE5);
 			else
 				reportStrike();
 			break;
@@ -231,28 +246,77 @@ class Memory : public Slave {
 		{
 		case 1:
 			if (btnPressed == 2)
-				this->nextStage(STATE_STAGE6);
+				this->changeStage(STATE_STAGE6);
 			else
 				reportStrike();
 			break;
 		case 2:
 			if (btnPressed == 1)
-				this->nextStage(STATE_STAGE6);
+				this->changeStage(STATE_STAGE6);
 			else
 				reportStrike();
 			break;
 		case 3:
 			if (btnPressed == 1)
-				this->nextStage(STATE_STAGE6);
+				this->changeStage(STATE_STAGE6);
 			else
 				reportStrike();
 			break;
 		case 4:
 			if (btnPressed == 4)
-				this->nextStage(STATE_STAGE6);
+				this->changeStage(STATE_STAGE6);
 			else
 				reportStrike();
 			break;
+		}
+	}
+
+	void handleStage6(byte btnPressed)
+	{
+		switch (this->currentClue)
+		{
+		case 1:
+			if (btnPressed == 2)
+				this->deactivate();
+			else
+				this->reportStrike();
+			break;
+		case 2:
+			if (btnPressed == 1)
+				this->deactivate();
+			else
+				this->reportStrike();
+			break;
+		case 3:
+			if (btnPressed == 1)
+				this->deactivate();
+			else
+				this->reportStrike();
+			break;
+		case 4:
+			if (btnPressed == 4)
+				this->deactivate();
+			else
+				this->reportStrike();
+			break;
+		}
+	}
+
+	void reportStrike() override
+	{
+		Slave::reportStrike();
+
+		// medium difficulty
+		if(this->difficulty == 1 && this->state > 1)
+		{
+			// drop down a stage
+			this->changeStage(this->state - 1);
+		}
+		// hard difficulty
+		else if(this->difficulty == 2 && this->state > 1)
+		{
+			// go back to the beginning
+			this->changeStage(1);
 		}
 	}
 
