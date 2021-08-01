@@ -112,9 +112,7 @@ class Maze : public Slave {
 	void handleStartNavigating()
 	{
 		if(this->btnNorth->pressed() || this->btnEast->pressed() || this->btnSouth->pressed() || this->btnWest->pressed())
-		{
 			this->state = STATE_NAVIGATING;
-		}
 	}
 
 	void handleMovement()
@@ -156,6 +154,7 @@ class Maze : public Slave {
 
 		if (mazeY < 0 || mazeY >= rows || mazeX < 0 || mazeX >= cols)
 		{
+			// TODO: support wrap around?
 			// oob crash
 			reportStrike();
 		}

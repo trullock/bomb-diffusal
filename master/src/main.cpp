@@ -3,6 +3,8 @@
 #include "../lib/TMRpcm-1.2.0/TMRpcm.h"
 #include "../lib/constants.h"
 
+// https://github.com/Koepel/How-to-use-the-Arduino-Wire-library/wiki
+
 byte moduleAddresses[127];
 byte moduleCount = 0;
 
@@ -11,6 +13,9 @@ byte deactivatedModules = 0;
 
 #define SD_ChipSelectPin 4
 TMRpcm tmrpcm;
+
+#define MODULE_READ_INTERVAL_MS 100
+unsigned long lastReadMillis = 0;
 
 struct ModuleResults
 {
@@ -121,6 +126,10 @@ void setup()
 
 void loop()
 {
+	// Dont hammer the slaves, give them some breathing room
+	if(millis() < lastReadMillis + MODULE_READ_INTERVAL_MS)
+		return;
+
 	ModuleResults results = readModules();
 
 	if (results.strikes != strikes)
@@ -143,4 +152,6 @@ void loop()
 
 	strikes = results.strikes;
 	deactivatedModules = results.deactivatedModules;
+
+	lastReadMillis = millis();
 }
