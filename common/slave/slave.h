@@ -11,7 +11,7 @@ class Slave {
 	void reportStatus();
 	void receiveCommand(int howMany);
 
-	byte commandBuffer[32];
+	volatile byte commandBuffer[8];
 	volatile byte commandBufferLength = 0;
 
 protected:

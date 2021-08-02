@@ -20,6 +20,7 @@ class Memory : public Slave {
 
 	byte currentClue = 0;
 	byte stages = 0;
+	byte preStrikeState = 0;
 
 	void setDifficulty(byte diff) override
 	{
@@ -71,6 +72,9 @@ class Memory : public Slave {
 	}
 
 	void strike() override {
+
+		this->preStrikeState = this->state;
+
 		Slave::strike();
 
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
@@ -326,7 +330,7 @@ class Memory : public Slave {
 
 	void stopStriking()
 	{
-		this->state = STATE_MORSING;
+		this->state = this->preStrikeState;
 	}
 
 public:

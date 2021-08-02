@@ -12,8 +12,6 @@ Slave::Slave(int i2cAddress) {
 	// enable broadcasts to be received
 	TWAR = (this->i2cAddress << 1) | 1;
 
-	memset(this->commandBuffer, 0, 32);
-
 	Wire.onRequest(Slave::reportStatusWrapper);
 	Wire.onReceive(Slave::receiveCommandWrapper);
 
@@ -86,23 +84,42 @@ void Slave::receiveCommand(int howMany)
 	if(howMany == 0)
 		return;
 
+	if(commandBufferLength == 8)
+	{
+		// If this buffer is full we have real problems, probably a bug somewhere else.
+		return;
+	}
+
 	this->commandBuffer[this->commandBufferLength] = Wire.read();
+	this->commandBufferLength++;
+	
+	if (howMany == 2)
+		this->commandBuffer[this->commandBufferLength] = Wire.read();
+	else
+		this->commandBuffer[this->commandBufferLength] = 0;
 
-	if(howMany == 2)
-		this->commandBuffer[this->commandBufferLength + 1] = Wire.read();
-
-	this->commandBufferLength += 2;
+	this->commandBufferLength++;
 }
 
 void Slave::handleCommand()
 {
-	if (this->commandBufferLength == 0)
+	byte buffer[8];
+	byte length = 0;
+
+	noInterrupts();
+	length = commandBufferLength;
+	commandBufferLength = 0;
+	for (byte i = 0; i < length; i++)
+		buffer[i] = this->commandBuffer[i];
+	interrupts();
+
+	if (length == 0)
 		return;
 
-	for(byte i = 0; i < this->commandBufferLength; i += 2)
+	for (byte i = 0; i < length; i += 2)
 	{
-		byte command = this->commandBuffer[i];
-		byte data = this->commandBuffer[i + 1];
+		byte command = buffer[i];
+		byte data = buffer[i + 1];
 
 		Serial.print("Received Command: ");
 		Serial.println(command);
@@ -116,6 +133,4 @@ void Slave::handleCommand()
 		else if (command == COMMAND_EXPLODE)
 			this->explode();
 	}
-
-	this->commandBufferLength = 0;
 }

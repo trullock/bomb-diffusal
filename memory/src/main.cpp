@@ -1,16 +1,16 @@
 #include <Arduino.h>
-#include "morse.cpp"
+#include "memory.cpp"
 
-Morse* morse;
+Memory* memory;
 
 void setup()
 {
 	Serial.begin(9600);
 
-	morse = new Morse();
+	memory = new Memory();
 }
 
 void loop()
 {
-	morse->loop();
+	memory->loop();
 }
