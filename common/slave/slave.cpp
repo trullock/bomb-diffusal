@@ -23,6 +23,7 @@ void Slave::reportStatusWrapper() {
 	self->reportStatus();
 }
 
+
 void Slave::receiveCommandWrapper(int x) {
 	self->receiveCommand(x);
 }

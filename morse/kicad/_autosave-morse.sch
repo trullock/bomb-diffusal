@@ -79,45 +79,11 @@ Wire Wire Line
 	3350 3550 3500 3550
 Wire Wire Line
 	3500 3550 3500 3250
-$Comp
-L Connector_Generic:Conn_01x05 Encoder1
-U 1 1 61045C91
-P 3150 2600
-F 0 "Encoder1" H 3068 2175 50  0000 C CNN
-F 1 "Conn_01x05" H 3068 2266 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 3150 2600 50  0001 C CNN
-F 3 "~" H 3150 2600 50  0001 C CNN
-	1    3150 2600
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	3350 2700 3550 2700
-Wire Wire Line
-	3550 2700 3550 2500
-Wire Wire Line
-	3550 2500 3350 2500
-Wire Wire Line
-	3550 2700 3800 2700
-Wire Wire Line
-	3800 2700 3800 3550
-Connection ~ 3550 2700
 Connection ~ 3800 3550
-Wire Wire Line
-	3350 2400 4250 2400
-Wire Wire Line
-	4250 2400 4250 3250
 Wire Wire Line
 	4250 3250 4600 3250
 Wire Wire Line
-	3350 2600 4150 2600
-Wire Wire Line
 	4150 3350 4600 3350
-Wire Wire Line
-	4150 2600 4150 3350
-Wire Wire Line
-	3350 2800 4050 2800
-Wire Wire Line
-	4050 2800 4050 3450
 Wire Wire Line
 	4050 3450 4600 3450
 $Comp
@@ -191,12 +157,12 @@ $EndComp
 Wire Wire Line
 	6300 4000 6300 4750
 Wire Wire Line
-	6300 4750 5200 4750
+	6300 4750 6000 4750
 Connection ~ 5200 4750
 Wire Wire Line
 	7550 4050 7550 4750
 Wire Wire Line
-	7550 4750 6300 4750
+	7550 4750 7250 4750
 Connection ~ 6300 4750
 Wire Wire Line
 	7550 1600 6300 1600
@@ -302,4 +268,84 @@ Wire Wire Line
 Wire Wire Line
 	5100 4250 5200 4250
 Connection ~ 5200 4250
+$Comp
+L Device:R R3
+U 1 1 6108410E
+P 6000 4150
+F 0 "R3" H 6070 4196 50  0000 L CNN
+F 1 "R" H 6070 4105 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5930 4150 50  0001 C CNN
+F 3 "~" H 6000 4150 50  0001 C CNN
+	1    6000 4150
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R4
+U 1 1 61084C3D
+P 7250 4150
+F 0 "R4" H 7320 4196 50  0000 L CNN
+F 1 "R" H 7320 4105 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 7180 4150 50  0001 C CNN
+F 3 "~" H 7250 4150 50  0001 C CNN
+	1    7250 4150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6000 3050 6000 4000
+Connection ~ 6000 3050
+Wire Wire Line
+	7250 4000 7250 3050
+Connection ~ 7250 3050
+Wire Wire Line
+	7250 4300 7250 4750
+Connection ~ 7250 4750
+Wire Wire Line
+	7250 4750 6300 4750
+Wire Wire Line
+	6000 4300 6000 4750
+Connection ~ 6000 4750
+Wire Wire Line
+	6000 4750 5200 4750
+$Comp
+L Device:Rotary_Encoder_Switch SW1
+U 1 1 61085799
+P 3400 2300
+F 0 "SW1" H 3400 2667 50  0000 C CNN
+F 1 "Rotary_Encoder_Switch" H 3400 2576 50  0000 C CNN
+F 2 "Rotary_Encoder:RotaryEncoder_Alps_EC11E-Switch_Vertical_H20mm_CircularMountingHoles" H 3250 2460 50  0001 C CNN
+F 3 "~" H 3400 2560 50  0001 C CNN
+	1    3400 2300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3800 2400 3700 2400
+Wire Wire Line
+	3800 2400 3800 2800
+Wire Wire Line
+	3100 2300 2950 2300
+Wire Wire Line
+	2950 2300 2950 2800
+Wire Wire Line
+	2950 2800 3800 2800
+Connection ~ 3800 2800
+Wire Wire Line
+	3800 2800 3800 3550
+Wire Wire Line
+	4050 2600 3100 2600
+Wire Wire Line
+	3100 2600 3100 2400
+Wire Wire Line
+	4050 2600 4050 3450
+Wire Wire Line
+	4150 1850 2950 1850
+Wire Wire Line
+	2950 1850 2950 2200
+Wire Wire Line
+	2950 2200 3100 2200
+Wire Wire Line
+	4150 1850 4150 3350
+Wire Wire Line
+	3700 2200 4250 2200
+Wire Wire Line
+	4250 2200 4250 3250
 $EndSCHEMATC

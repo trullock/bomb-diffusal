@@ -1,4 +1,4 @@
-#include "../lib/slave/slave.h"
+#include <slave.h>
 #include "../lib/button.h"
 #include "../lib/MD_MAX72xx/MD_MAX72xx.h"
 
@@ -17,6 +17,7 @@ class Maze : public Slave {
 	Button* btnWest;
 
 	/// Pulsing
+	
 	float pulsePhase = 0;
 	unsigned long nextPulseMillis = 0;
 
