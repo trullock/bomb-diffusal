@@ -1,7 +1,7 @@
-#include "../lib/slave/slave.h"
+#include <slave.h>
 #include <Encoder.h>
 #include "../lib/button.h"
-#include "../lib/LedControl/LedControl.h"
+#include <LedControl.h>
 
 #define STATE_MORSING 1
 

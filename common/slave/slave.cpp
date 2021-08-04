@@ -4,7 +4,8 @@
 
 Slave* Slave::self = nullptr;
 
-Slave::Slave(int i2cAddress) {
+Slave::Slave(int i2cAddress)
+{
 	self = this;
 	this->i2cAddress = i2cAddress;
 
@@ -19,21 +20,29 @@ Slave::Slave(int i2cAddress) {
 	Serial.println(this->i2cAddress);
 }
 
-void Slave::reportStatusWrapper() {
+void Slave::reportStatusWrapper()
+{
 	self->reportStatus();
 }
 
 
-void Slave::receiveCommandWrapper(int x) {
+void Slave::receiveCommandWrapper(int x)
+{
 	self->receiveCommand(x);
 }
 
-void Slave::reportStatus() {
+void Slave::reportStatus()
+{
 	
 	Wire.write(this->state);
 	Wire.write(this->strikes);
 	Wire.write(this->pendingNotification);
 	this->pendingNotification = 0;
+}
+
+void Slave::updateTimeRemaining(byte mins)
+{
+	this->timeRemainingInMins = mins;
 }
 
 void Slave::reportStrike()
@@ -133,5 +142,7 @@ void Slave::handleCommand()
 			this->strike();
 		else if (command == COMMAND_EXPLODE)
 			this->explode();
+		else if (command == COMMAND_TIME)
+			this->updateTimeRemaining(data);
 	}
 }

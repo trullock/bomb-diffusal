@@ -21,10 +21,12 @@ protected:
 	byte strikes = 0;
 	byte state = STATE_DISARMED;
 	byte difficulty = 1;
+	byte timeRemainingInMins = 0;
 
 	void handleCommand();
 
 	virtual void reportStrike();
+	virtual void updateTimeRemaining(byte mins);
 
 	virtual void arm();
 	virtual void strike();

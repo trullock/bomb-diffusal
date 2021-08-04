@@ -1,7 +1,7 @@
-#include "../lib/slave/slave.h"
+#include <slave.h>
 #include <Encoder.h>
 #include "../lib/button.h"
-#include "../lib/Adafruit_SSD1306/Adafruit_SSD1306.h"
+#include <Adafruit_SSD1306.h>
 
 #define STATE_STAGE1 1
 #define STATE_STAGE2 2

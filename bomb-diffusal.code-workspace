@@ -19,6 +19,9 @@
 		{
 			"name": "maze",
 			"path": "maze"
+		},
+		{
+			"path": "knob"
 		}
 	],
 	"settings": {}

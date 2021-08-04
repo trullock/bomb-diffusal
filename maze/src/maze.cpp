@@ -1,6 +1,6 @@
 #include <slave.h>
-#include "../lib/button.h"
-#include "../lib/MD_MAX72xx/MD_MAX72xx.h"
+#include <button.h>
+#include <MD_MAX72xx.h>
 
 #define STATE_CLUE 1
 #define STATE_NAVIGATING 2
@@ -215,7 +215,6 @@ public:
 		this->btnWest = new Button(4, INPUT);
 
 		this->display->begin();
-
 		this->display->control(MD_MAX72XX::controlRequest_t::INTENSITY, 15);
 		this->display->clear();
 		this->display->update();

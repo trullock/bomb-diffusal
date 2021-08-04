@@ -37,8 +37,9 @@ public:
 	Button(int pin, int mode) {
 		this->pin = pin;
 		this->mode = mode;
-		
+
 		pinMode(pin, mode);
+		this->updateState();
 	}
 
 	bool pressed() {

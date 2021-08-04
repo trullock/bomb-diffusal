@@ -8,6 +8,10 @@
 byte moduleAddresses[127];
 byte moduleCount = 0;
 
+byte difficulty = 1;
+unsigned int timeRemainingInS = 0;
+byte timeRemainingInM = 0;
+
 byte strikes = 0;
 byte deactivatedModules = 0;
 
@@ -16,6 +20,7 @@ TMRpcm tmrpcm;
 
 #define MODULE_READ_INTERVAL_MS 100
 unsigned long lastReadMillis = 0;
+unsigned long lastSecondMillis = 0;
 
 struct ModuleResults
 {
@@ -102,6 +107,36 @@ void scanI2C()
 	Serial.println("	Finished");
 }
 
+void setDifficulty(byte diff)
+{
+	difficulty = diff;
+	sendCommand(COMMAND_DIFFICULTY, difficulty);
+
+	if(difficulty == 0)
+		timeRemainingInS = 45 * 60;
+	else if (difficulty == 1)
+		timeRemainingInS = 30 * 60;
+	if (difficulty == 2)
+		timeRemainingInS = 20 * 60;
+}
+
+void updateCountdown(unsigned long now)
+{
+	if (now > lastSecondMillis + 1000)
+	{
+		lastSecondMillis = now;
+		byte timeInM = ceil(timeRemainingInS / 60.0);
+
+		// TODO: update counter
+
+		if(timeRemainingInM != timeInM)
+		{
+			timeRemainingInM = timeInM;
+			sendCommand(COMMAND_TIME, timeInM);
+		}
+	}
+}
+
 void setup()
 {
 	Serial.println("Master booting");
@@ -120,14 +155,17 @@ void setup()
 
 	scanI2C();
 
-	sendCommand(COMMAND_DIFFICULTY, 1);
 	sendCommand(COMMAND_ARM);
+
 }
+
 
 void loop()
 {
+	unsigned long now = millis();
+
 	// Dont hammer the slaves, give them some breathing room
-	if(millis() < lastReadMillis + MODULE_READ_INTERVAL_MS)
+	if(now < lastReadMillis + MODULE_READ_INTERVAL_MS)
 		return;
 
 	ModuleResults results = readModules();
@@ -139,6 +177,8 @@ void loop()
 		sendCommand(COMMAND_STRIKE);
 		tmrpcm.play("strike.wav");
 	}
+
+	updateCountdown(now);
 
 	if (results.deactivatedModules != deactivatedModules)
 	{
@@ -153,5 +193,5 @@ void loop()
 	strikes = results.strikes;
 	deactivatedModules = results.deactivatedModules;
 
-	lastReadMillis = millis();
+	lastReadMillis = now;
 }
