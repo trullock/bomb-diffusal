@@ -1,5 +1,5 @@
 #include <slave.h>
-#include <button.h>
+#include "../lib/button.h"
 #include <MD_MAX72xx.h>
 
 #define STATE_CLUE 1
