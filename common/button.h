@@ -3,6 +3,9 @@
 #ifndef Button_h
 #define Button_h
 
+/**
+ * Handles button presses and releases with debouncing.
+ */
 class Button {
 
 	int pin;
@@ -12,6 +15,10 @@ class Button {
 	bool isPressed = false;
 	bool read = true;
 
+	/**
+	 * Updates the state of the button.
+	 * If the state changes, this is recorded and `read = false`
+	 */
 	void updateState()
 	{
 		bool pressed = digitalRead(this->pin) == (mode == INPUT ? HIGH : LOW);
@@ -42,6 +49,10 @@ public:
 		this->updateState();
 	}
 
+	/**
+	 * Determines if the button has been pressed.
+	 * Calling this method will only return `true` once for each press.
+	 */
 	bool pressed() {
 		this->updateState();
 
@@ -52,6 +63,10 @@ public:
 		return isPressed;
 	}
 
+	/**
+	 * Determines if the button has been released after being pressed.
+	 * Calling this method will only return `true` once for each release.
+	 */
 	bool released() {
 		this->updateState();
 		

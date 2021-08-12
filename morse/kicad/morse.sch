@@ -39,17 +39,6 @@ F 3 "" H 5200 4750 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5200 4250 5200 4750
-$Comp
-L Connector_Generic:Conn_01x05 7Seg1
-U 1 1 61042CBA
-P 3150 3750
-F 0 "7Seg1" H 3068 3325 50  0000 C CNN
-F 1 "Conn_01x05" H 3068 3416 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 3150 3750 50  0001 C CNN
-F 3 "~" H 3150 3750 50  0001 C CNN
-	1    3150 3750
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	4600 3950 3350 3950
 Wire Wire Line
@@ -79,47 +68,9 @@ Wire Wire Line
 	3350 3550 3500 3550
 Wire Wire Line
 	3500 3550 3500 3250
-$Comp
-L Connector_Generic:Conn_01x05 Encoder1
-U 1 1 61045C91
-P 3150 2600
-F 0 "Encoder1" H 3068 2175 50  0000 C CNN
-F 1 "Conn_01x05" H 3068 2266 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 3150 2600 50  0001 C CNN
-F 3 "~" H 3150 2600 50  0001 C CNN
-	1    3150 2600
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	3350 2700 3550 2700
-Wire Wire Line
-	3550 2700 3550 2500
-Wire Wire Line
-	3550 2500 3350 2500
-Wire Wire Line
-	3550 2700 3800 2700
-Wire Wire Line
-	3800 2700 3800 3550
-Connection ~ 3550 2700
 Connection ~ 3800 3550
 Wire Wire Line
-	3350 2400 4250 2400
-Wire Wire Line
-	4250 2400 4250 3250
-Wire Wire Line
 	4250 3250 4600 3250
-Wire Wire Line
-	3350 2600 4150 2600
-Wire Wire Line
-	4150 3350 4600 3350
-Wire Wire Line
-	4150 2600 4150 3350
-Wire Wire Line
-	3350 2800 4050 2800
-Wire Wire Line
-	4050 2800 4050 3450
-Wire Wire Line
-	4050 3450 4600 3450
 $Comp
 L power:GND #PWR0104
 U 1 1 61045251
@@ -130,28 +81,6 @@ F 2 "" H 3800 3550 50  0001 C CNN
 F 3 "" H 3800 3550 50  0001 C CNN
 	1    3800 3550
 	0    -1   -1   0   
-$EndComp
-$Comp
-L MCU_Module:Arduino_Nano_v3.x Nano1
-U 1 1 6103F115
-P 5100 3250
-F 0 "Nano1" H 5100 2161 50  0000 C CNN
-F 1 "Arduino_Nano_v3.x" H 5100 2070 50  0000 C CNN
-F 2 "Module:Arduino_Nano" H 5100 3250 50  0001 C CIN
-F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 5100 3250 50  0001 C CNN
-	1    5100 3250
-	1    0    0    -1  
-$EndComp
-$Comp
-L Transistor_BJT:2N2219 Q1
-U 1 1 6104D7BF
-P 6200 3050
-F 0 "Q1" H 6390 3096 50  0000 L CNN
-F 1 "2N2219" H 6390 3005 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-39-3" H 6400 2975 50  0001 L CIN
-F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 6200 3050 50  0001 L CNN
-	1    6200 3050
-	1    0    0    -1  
 $EndComp
 Wire Wire Line
 	4600 2850 4450 2850
@@ -166,38 +95,9 @@ Wire Wire Line
 Wire Wire Line
 	6300 1600 5300 1600
 Connection ~ 5300 1600
-$Comp
-L Connector_Generic:Conn_01x02 MorseLED1
-U 1 1 610551C1
-P 6500 3900
-F 0 "MorseLED1" H 6580 3892 50  0000 L CNN
-F 1 "Conn_01x02" H 6580 3801 50  0000 L CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 6500 3900 50  0001 C CNN
-F 3 "~" H 6500 3900 50  0001 C CNN
-	1    6500 3900
-	1    0    0    -1  
-$EndComp
-$Comp
-L Connector_Generic:Conn_01x02 DeactivatedLED1
-U 1 1 6105576B
-P 7750 3950
-F 0 "DeactivatedLED1" H 7830 3942 50  0000 L CNN
-F 1 "Conn_01x02" H 7830 3851 50  0000 L CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 7750 3950 50  0001 C CNN
-F 3 "~" H 7750 3950 50  0001 C CNN
-	1    7750 3950
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6300 4000 6300 4750
-Wire Wire Line
-	6300 4750 6000 4750
 Connection ~ 5200 4750
 Wire Wire Line
-	7550 4050 7550 4750
-Wire Wire Line
 	7550 4750 7250 4750
-Connection ~ 6300 4750
 Wire Wire Line
 	7550 1600 6300 1600
 Connection ~ 6300 1600
@@ -209,17 +109,6 @@ Wire Wire Line
 	4350 2000 4350 2950
 Wire Wire Line
 	4350 2950 4600 2950
-$Comp
-L Connector_Generic:Conn_01x04 J1
-U 1 1 6105BDAA
-P 8400 1350
-F 0 "J1" V 8364 1062 50  0000 R CNN
-F 1 "Conn_01x04" V 8273 1062 50  0000 R CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical" H 8400 1350 50  0001 C CNN
-F 3 "~" H 8400 1350 50  0001 C CNN
-	1    8400 1350
-	0    -1   -1   0   
-$EndComp
 $Comp
 L power:GND #PWR0105
 U 1 1 6105C619
@@ -247,13 +136,119 @@ Wire Wire Line
 Wire Wire Line
 	8500 1550 8500 1750
 Wire Wire Line
-	8400 1550 8400 3650
-Wire Wire Line
-	8400 3650 5600 3650
-Wire Wire Line
 	7550 2850 7550 1600
 Wire Wire Line
 	7250 3050 7000 3050
+Wire Wire Line
+	7550 3250 7550 3300
+Wire Wire Line
+	6300 3250 6300 3300
+Wire Wire Line
+	5100 4250 5200 4250
+Wire Wire Line
+	6000 3050 6000 4000
+Connection ~ 6000 3050
+Wire Wire Line
+	7250 4000 7250 3050
+Connection ~ 7250 3050
+Wire Wire Line
+	7250 4300 7250 4750
+Connection ~ 7250 4750
+Wire Wire Line
+	6000 4300 6000 4750
+Connection ~ 6000 4750
+Wire Wire Line
+	6000 4750 5200 4750
+Wire Wire Line
+	3800 2400 3700 2400
+Wire Wire Line
+	3800 2400 3800 2800
+Wire Wire Line
+	3100 2300 2950 2300
+Wire Wire Line
+	2950 2300 2950 2800
+Wire Wire Line
+	2950 2800 3800 2800
+Connection ~ 3800 2800
+Wire Wire Line
+	3800 2800 3800 3550
+Wire Wire Line
+	4050 2600 3100 2600
+Wire Wire Line
+	3100 2600 3100 2400
+Wire Wire Line
+	4150 1850 2950 1850
+Wire Wire Line
+	2950 1850 2950 2200
+Wire Wire Line
+	2950 2200 3100 2200
+Wire Wire Line
+	3700 2200 4250 2200
+Wire Wire Line
+	4250 2200 4250 3250
+Connection ~ 5200 4250
+Wire Wire Line
+	4150 1850 4150 3450
+Wire Wire Line
+	4150 3450 4600 3450
+Wire Wire Line
+	4050 2600 4050 3350
+Wire Wire Line
+	4050 3350 4600 3350
+Wire Wire Line
+	8600 3650 8600 1550
+Wire Wire Line
+	5600 3650 8600 3650
+Wire Wire Line
+	5600 3750 8400 3750
+Wire Wire Line
+	8400 1550 8400 3750
+Wire Wire Line
+	6000 4750 6300 4750
+Wire Wire Line
+	6300 3600 6300 3850
+Wire Wire Line
+	6300 4150 6300 4750
+Connection ~ 6300 4750
+Wire Wire Line
+	6300 4750 7250 4750
+Wire Wire Line
+	7550 3600 7550 3900
+Wire Wire Line
+	7550 4200 7550 4750
+$Comp
+L Connector_Generic:Conn_01x05 7Seg1
+U 1 1 61042CBA
+P 3150 3750
+F 0 "7Seg1" H 3068 3325 50  0000 C CNN
+F 1 "Conn_01x05" H 3068 3416 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 3150 3750 50  0001 C CNN
+F 3 "~" H 3150 3750 50  0001 C CNN
+	1    3150 3750
+	-1   0    0    1   
+$EndComp
+$Comp
+L Transistor_BJT:2N2219 Q1
+U 1 1 6104D7BF
+P 6200 3050
+F 0 "Q1" H 6390 3096 50  0000 L CNN
+F 1 "2N2219" H 6390 3005 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-39-3" H 6400 2975 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 6200 3050 50  0001 L CNN
+	1    6200 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x04 Master1
+U 1 1 6105BDAA
+P 8400 1350
+F 0 "Master1" V 8364 1062 50  0000 R CNN
+F 1 "Conn_01x04" V 8273 1062 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical" H 8400 1350 50  0001 C CNN
+F 3 "~" H 8400 1350 50  0001 C CNN
+	1    8400 1350
+	0    -1   -1   0   
+$EndComp
 $Comp
 L Transistor_BJT:2N2219 Q2
 U 1 1 6105728C
@@ -265,10 +260,6 @@ F 3 "http://www.onsemi.com/pub_link/Collateral/2N2219-D.PDF" H 7450 3050 50  000
 	1    7450 3050
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	7550 3600 7550 3950
-Wire Wire Line
-	7550 3250 7550 3300
 $Comp
 L Device:R R2
 U 1 1 61056D92
@@ -280,10 +271,6 @@ F 3 "~" H 7550 3450 50  0001 C CNN
 	1    7550 3450
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	8600 1550 8600 3750
-Wire Wire Line
-	8600 3750 5600 3750
 $Comp
 L Device:R R1
 U 1 1 6104E96F
@@ -295,13 +282,6 @@ F 3 "~" H 6300 3450 50  0001 C CNN
 	1    6300 3450
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6300 3250 6300 3300
-Wire Wire Line
-	6300 3600 6300 3900
-Wire Wire Line
-	5100 4250 5200 4250
-Connection ~ 5200 4250
 $Comp
 L Device:R R3
 U 1 1 6108410E
@@ -324,20 +304,48 @@ F 3 "~" H 7250 4150 50  0001 C CNN
 	1    7250 4150
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6000 3050 6000 4000
-Connection ~ 6000 3050
-Wire Wire Line
-	7250 4000 7250 3050
-Connection ~ 7250 3050
-Wire Wire Line
-	7250 4300 7250 4750
-Connection ~ 7250 4750
-Wire Wire Line
-	7250 4750 6300 4750
-Wire Wire Line
-	6000 4300 6000 4750
-Connection ~ 6000 4750
-Wire Wire Line
-	6000 4750 5200 4750
+$Comp
+L Device:Rotary_Encoder_Switch Encoder1
+U 1 1 61085799
+P 3400 2300
+F 0 "Encoder1" H 3400 2667 50  0000 C CNN
+F 1 "Rotary_Encoder_Switch" H 3400 2576 50  0000 C CNN
+F 2 "Rotary_Encoder:RotaryEncoder_Alps_EC11E-Switch_Vertical_H20mm_CircularMountingHoles" H 3250 2460 50  0001 C CNN
+F 3 "~" H 3400 2560 50  0001 C CNN
+	1    3400 2300
+	1    0    0    -1  
+$EndComp
+$Comp
+L MCU_Module:Arduino_Nano_v3.x Nano1
+U 1 1 6103F115
+P 5100 3250
+F 0 "Nano1" H 5100 2161 50  0000 C CNN
+F 1 "Arduino_Nano_v3.x" H 5100 2070 50  0000 C CNN
+F 2 "Module:Arduino_Nano" H 5100 3250 50  0001 C CIN
+F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 5100 3250 50  0001 C CNN
+	1    5100 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:LED Disarmed1
+U 1 1 610B5617
+P 7550 4050
+F 0 "Disarmed1" V 7589 3932 50  0000 R CNN
+F 1 "LED" V 7498 3932 50  0000 R CNN
+F 2 "LED_THT:LED_D5.0mm" H 7550 4050 50  0001 C CNN
+F 3 "~" H 7550 4050 50  0001 C CNN
+	1    7550 4050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:LED Morse1
+U 1 1 610B674C
+P 6300 4000
+F 0 "Morse1" V 6339 3882 50  0000 R CNN
+F 1 "LED" V 6248 3882 50  0000 R CNN
+F 2 "LED_THT:LED_D10.0mm" H 6300 4000 50  0001 C CNN
+F 3 "~" H 6300 4000 50  0001 C CNN
+	1    6300 4000
+	0    -1   -1   0   
+$EndComp
 $EndSCHEMATC
