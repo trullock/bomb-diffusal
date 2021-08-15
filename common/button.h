@@ -41,6 +41,10 @@ class Button {
 	}
 
 public:
+
+	/**
+	 * Creates a new button for the given pin and pinMode
+	 */
 	Button(int pin, int mode) {
 		this->pin = pin;
 		this->mode = mode;

@@ -1,5 +1,0 @@
-{
-    "board": "arduino:avr:nano",
-    "path": "C:/Arduino",
-    "port": "COM3"
-}

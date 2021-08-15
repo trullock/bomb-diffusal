@@ -4,6 +4,9 @@
 
 Slave* Slave::self = nullptr;
 
+/**
+ * Creates a new slave with the given I2C address
+ */
 Slave::Slave(int i2cAddress)
 {
 	self = this;
@@ -20,17 +23,26 @@ Slave::Slave(int i2cAddress)
 	Serial.println(this->i2cAddress);
 }
 
+/**
+ * Static hack to support easy wire callbacks
+ */
 void Slave::reportStatusWrapper()
 {
 	self->reportStatus();
 }
 
 
+/**
+ * Static hack to support easy wire callbacks
+ */
 void Slave::receiveCommandWrapper(int x)
 {
 	self->receiveCommand(x);
 }
 
+/**
+ * Reports this module's status back to the master
+ */
 void Slave::reportStatus()
 {
 	
