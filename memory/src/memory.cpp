@@ -25,7 +25,7 @@ class Memory : public Slave {
 	byte preStrikeState = 0;
 
 	Adafruit_SSD1306* display;
-	SoftwareI2C *displayWire;
+	SlowSoftWire *displayWire;
 
 	void setDifficulty(byte diff) override
 	{
@@ -346,17 +346,18 @@ public:
 		this->btn3 = new Button(7, INPUT_PULLUP);
 		this->btn4 = new Button(8, INPUT_PULLUP);
 
-		this->displayWire = new SoftwareI2C();
-		this->displayWire->begin(3, 2);
+		this->displayWire = new SlowSoftWire(4, 5, true);
+		this->displayWire->begin();
+
 
 		this->display = new Adafruit_SSD1306(128, 32, this->displayWire, -1);
 		if (!display->begin(SSD1306_SWITCHCAPVCC, 0x3C))
 		{ // Address 0x3C for 128x32
 			Serial.println(F("SSD1306 allocation failed"));
 		}
-		//display->display();
-		display->clearDisplay();
-		display->drawPixel(10, 20, SSD1306_WHITE);
+		display->display();
+		//display->clearDisplay();
+	//	display->drawPixel(10, 20, SSD1306_WHITE);
 	}
 
 	void loop()

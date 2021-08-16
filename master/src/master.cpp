@@ -9,6 +9,8 @@
 
 #define SPEAKER_PIN 9
 #define SD_CHIPSELECT_PIN 4
+#define LOOP_INTERVAL_MS 100
+
 
 class Master
 {
@@ -20,9 +22,9 @@ class Master
 	bool armed = false;
 	byte difficulty = 1;
 	
+	unsigned long lastLoopMillis = 0;
 	unsigned long lastSecondMillis = 0;
 	unsigned int timeRemainingInS = 0;
-	byte timeRemainingInM = 0;
 
 	byte strikes = 0;
 	byte deactivatedModules = 0;
@@ -44,9 +46,24 @@ class Master
 		}
 	}
 
+	void sendCommand(byte command, unsigned int arg)
+	{
+		Wire.beginTransmission(0);
+		Wire.write(command);
+		if(arg != 0)
+			Wire.write(arg);
+
+		int error = Wire.endTransmission();
+		if (error != 0)
+		{
+			Serial.print("Error sending command: ");
+			Serial.println(error);
+		}
+	}
+
 	void sendCommand(byte command)
 	{
-		sendCommand(command, 0);
+		sendCommand(command, (byte)0);
 	}
 
 	/**
@@ -117,15 +134,14 @@ class Master
 		if (now > lastSecondMillis + 1000)
 		{
 			lastSecondMillis = now;
-			byte timeInM = ceil(timeRemainingInS / 60.0);
+			// TODO: update screen
 
-			// TODO: update counter
+				
+				Serial.print("Sending Time-remaining command: ");
+				Serial.print(timeRemainingInS);
+				Serial.println("s");
 
-			if(timeRemainingInM != timeInM)
-			{
-				timeRemainingInM = timeInM;
-				sendCommand(COMMAND_TIME, timeInM);
-			}
+				sendCommand(COMMAND_TIME, timeRemainingInS);
 		}
 	}
 
@@ -150,9 +166,12 @@ public:
 
 	Master()
 	{
+		Serial.println("Master booting");
+
 		tmrpcm.speakerPin = SPEAKER_PIN;
+
 		if (!SD.begin(SD_CHIPSELECT_PIN))
-			Serial.println("SD fail");
+			Serial.println("	Failed to mount SD card");
 
 		this->scanForModules();
 	}
@@ -179,6 +198,10 @@ public:
 
 	void loop(unsigned long now)
 	{
+		// Dont hammer the slaves, give them some breathing room
+		if(now < this->lastLoopMillis + LOOP_INTERVAL_MS)
+			return;
+			
 		ModuleResults results = readModules();
 
 		if (results.strikes != this->strikes)
@@ -194,5 +217,7 @@ public:
 
 		this->strikes = results.strikes;
 		this->deactivatedModules = results.deactivatedModules;
+
+		this->lastLoopMillis = now;
 	}
 };

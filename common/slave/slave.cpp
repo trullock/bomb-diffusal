@@ -52,9 +52,9 @@ void Slave::reportStatus()
 	this->pendingNotification = 0;
 }
 
-void Slave::updateTimeRemaining(byte mins)
+void Slave::updateTimeRemaining(unsigned int secs)
 {
-	this->timeRemainingInMins = mins;
+	this->timeRemainingInSecs = secs;
 }
 
 void Slave::reportStrike()
@@ -106,7 +106,7 @@ void Slave::receiveCommand(int howMany)
 	if(howMany == 0)
 		return;
 
-	if(commandBufferLength == 8)
+	if(commandBufferLength == 12)
 	{
 		// If this buffer is full we have real problems, probably a bug somewhere else.
 		return;
@@ -120,12 +120,17 @@ void Slave::receiveCommand(int howMany)
 	else
 		this->commandBuffer[this->commandBufferLength] = 0;
 
+	if (howMany == 3)
+		this->commandBuffer[this->commandBufferLength] = Wire.read();
+	else
+		this->commandBuffer[this->commandBufferLength] = 0;
+
 	this->commandBufferLength++;
 }
 
 void Slave::handleCommand()
 {
-	byte buffer[8];
+	byte buffer[12];
 	byte length = 0;
 
 	noInterrupts();
@@ -138,16 +143,17 @@ void Slave::handleCommand()
 	if (length == 0)
 		return;
 
-	for (byte i = 0; i < length; i += 2)
+	for (byte i = 0; i < length; i += 3)
 	{
 		byte command = buffer[i];
-		byte data = buffer[i + 1];
+		byte data1 = buffer[i + 1];
+		byte data2 = buffer[i + 2];
 
 		Serial.print("Received Command: ");
 		Serial.println(command);
 
 		if (command == COMMAND_DIFFICULTY)
-			this->setDifficulty(data);
+			this->setDifficulty(data1);
 		else if (command == COMMAND_ARM)
 			this->arm();
 		else if (command == COMMAND_STRIKE)
@@ -155,6 +161,10 @@ void Slave::handleCommand()
 		else if (command == COMMAND_EXPLODE)
 			this->explode();
 		else if (command == COMMAND_TIME)
-			this->updateTimeRemaining(data);
+		{
+			// todo: check endianness;
+			unsigned int time = (data1 << 8) + data2;
+			this->updateTimeRemaining(time);
+		}
 	}
 }

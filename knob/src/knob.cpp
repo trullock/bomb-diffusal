@@ -1,57 +1,45 @@
-#include <slave.h>
+#include <NeedySlave.h>
 #include "../lib/button.h"
 
-#define STATE_SLEEPING 1
-#define STATE_ACTIVE 2
-
-class Knob : public Slave {
+class Knob : public NeedySlave {
 
 	unsigned long nextMillis = 0;
 
 	byte knobPosition = 0;
+	byte preStrikeState = 0;
 
 	Button* btn1;
 	Button* btn2;
 	Button* btn3;
 	Button* btn4;
 
-	byte activationTimeInM[3] = { 15, 10, 5 };
 
 	void setDifficulty(byte diff) override
 	{
-		Slave::setDifficulty(diff);
+		NeedySlave::setDifficulty(diff);
 	}
 
 	void arm()
 	{
-		Slave::arm();
+		NeedySlave::arm();
 
 		this->state = STATE_SLEEPING;
 	}
 
 	void strike() override {
-		Slave::strike();
+		NeedySlave::strike();
 
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
 	}
 
 	void explode() override
 	{
-		Slave::explode();
+		NeedySlave::explode();
 	}
 
 	void deactivate() override
 	{
-		Slave::deactivate();
-	}
-
-	void maybeWakeUp()
-	{
-		if (timeRemainingInMins <= activationTimeInM[this->difficulty])
-		{
-			this->state = STATE_ACTIVE;
-			return;
-		}
+		NeedySlave::deactivate();
 	}
 
 	void handleKnob()
@@ -68,7 +56,7 @@ class Knob : public Slave {
 
 	void reportStrike() override
 	{
-		Slave::reportStrike();
+		NeedySlave::reportStrike();
 	}
 
 	void stopStriking()
@@ -77,7 +65,7 @@ class Knob : public Slave {
 	}
 
 public:
-	Knob() : Slave(4)
+	Knob() : NeedySlave(4)
 	{
 		this->btn1 = new Button(9, INPUT_PULLUP);
 		this->btn2 = new Button(6, INPUT_PULLUP);
@@ -87,13 +75,9 @@ public:
 
 	void loop()
 	{
-		Slave::loop();
+		NeedySlave::loop();
 
-		if(this->state == STATE_SLEEPING)
-		{
-			this->maybeWakeUp();
-		}
-		else if (this->state == STATE_ACTIVE)
+		if (this->state == STATE_ACTIVE)
 		{
 			this->handleKnob();
 		}

@@ -75,8 +75,8 @@ void SoftwareI2C::sclSet(uchar ucDta) {
 *************************************************************************************************/
 uchar SoftwareI2C::getAck(void) {
     sclSet(LOW);
-    pinMode(pinSda, INPUT);
-    sda_in_out = INPUT;
+    pinMode(pinSda, INPUT_PULLUP);
+    sda_in_out = INPUT_PULLUP;
 
     sclSet(HIGH);
     unsigned long timer_t = micros();
@@ -222,8 +222,8 @@ uchar SoftwareI2C::read() {
 
     uchar ucRt = 0;
 
-    pinMode(pinSda, INPUT);
-    sda_in_out = INPUT;
+    pinMode(pinSda, INPUT_PULLUP);
+    sda_in_out = INPUT_PULLUP;
 
     for (int i = 0; i < 8; i++) {
         unsigned  char  ucBit;

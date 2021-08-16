@@ -10,8 +10,8 @@ class Slave {
 
 	void reportStatus();
 	void receiveCommand(int howMany);
-
-	volatile byte commandBuffer[8];
+	
+	volatile byte commandBuffer[12];
 	volatile byte commandBufferLength = 0;
 
 protected:
@@ -21,12 +21,12 @@ protected:
 	byte strikes = 0;
 	byte state = STATE_DISARMED;
 	byte difficulty = 1;
-	byte timeRemainingInMins = 0;
+	byte timeRemainingInSecs = 0;
 
 	void handleCommand();
 
 	virtual void reportStrike();
-	virtual void updateTimeRemaining(byte mins);
+	virtual void updateTimeRemaining(unsigned int secs);
 
 	virtual void arm();
 	virtual void strike();

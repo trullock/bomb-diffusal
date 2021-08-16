@@ -22,6 +22,9 @@
 		},
 		{
 			"path": "knob"
+		},
+		{
+			"path": "capacitors"
 		}
 	],
 	"settings": {}

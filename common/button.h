@@ -56,6 +56,7 @@ public:
 	/**
 	 * Determines if the button has been pressed.
 	 * Calling this method will only return `true` once for each press.
+	 * This will return true if the button is pressed when this class was instantiated
 	 */
 	bool pressed() {
 		this->updateState();
@@ -70,6 +71,7 @@ public:
 	/**
 	 * Determines if the button has been released after being pressed.
 	 * Calling this method will only return `true` once for each release.
+	 * This will not return true if the button is released when this class was instantiated
 	 */
 	bool released() {
 		this->updateState();
