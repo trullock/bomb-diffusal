@@ -45,7 +45,7 @@ class Capacitors : public NeedySlave {
 
 	void setChargeDelta(float delta)
 	{
-		this->chargeDelta = knobPosition == 0 ? -0.1 : knobPosition / 20.0;
+		this->chargeDelta = delta;
 		this->chargeDeltaInt = this->chargeDelta;
 	}
 
@@ -56,7 +56,7 @@ class Capacitors : public NeedySlave {
 		{
 			knobPosition = position;
 
-			this->setChargeDelta(knobPosition == 0 ? -0.1 : knobPosition / 20.0);
+			this->setChargeDelta(knobPosition == 0 ? -0.1 : knobPosition / 10.0);
 		}
 	}
 
@@ -79,17 +79,51 @@ class Capacitors : public NeedySlave {
 		if(r > 0)
 			return;
 
-		Serial.println("Randomising charge level");
+		float newDelta = this->chargeDelta + this->initialChargeDelta[this->difficulty] * 2;
+		Serial.print("Randomising charge delta: ");
+		Serial.println(newDelta);
 
-		this->setChargeDelta(this->chargeDelta - this->initialChargeDelta[this->difficulty] * 2);
+		this->setChargeDelta(newDelta);
 		knob.write(0);
 	}
 
 	void reportStrike()
 	{
 		NeedySlave::reportStrike();
-
+		this->reset();
 	}
+
+	void setNewChargeLevel(float level)
+	{
+		this->chargeLevel = min(level, 124);
+		this->chargeLevelInt = this->chargeLevel;
+
+		if(this->chargeLevelInt == 0 || this->chargeLevelInt == 124)
+		{
+			this->reportStrike();
+		}
+	}
+
+	void updateDisplay()
+	{
+		bool showBar = true;
+
+		if(this->chargeLevel < 20 || this->chargeLevel > 100)
+		{
+			if(!this->flashState)
+				showBar = false;
+		}
+
+		// remove old bar
+		this->display->fillRect(2, 12, 124, 7, SSD1306_BLACK);
+		
+		// set new bar
+		if(showBar)
+			this->display->fillRect(2, 12, this->chargeLevel, 7, SSD1306_WHITE);
+		
+		this->display->display();
+	}
+
 
 public:
 
@@ -123,37 +157,6 @@ public:
 	{
 		Serial.println("Activating");
 		this->setChargeDelta(this->initialChargeDelta[this->difficulty]);
-	}
-
-	void setNewChargeLevel(float level)
-	{
-		this->chargeLevel = min(level, 124);
-		this->chargeLevelInt = this->chargeLevel;
-
-		if(this->chargeLevelInt == 0 || this->chargeLevelInt == 124)
-		{
-			this->reportStrike();
-		}
-	}
-
-	void updateDisplay()
-	{
-		bool showBar = true;
-
-		if(this->chargeLevel < 20 || this->chargeLevel > 100)
-		{
-			if(!this->flashState)
-				showBar = false;
-		}
-
-		// remove old bar
-		this->display->fillRect(2, 12, 124, 7, SSD1306_BLACK);
-		
-		// set new bar
-		if(showBar)
-			this->display->fillRect(2, 12, this->chargeLevel, 7, SSD1306_WHITE);
-		
-		this->display->display();
 	}
 
 	void loop()

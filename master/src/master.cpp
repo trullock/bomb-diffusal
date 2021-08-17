@@ -1,14 +1,9 @@
 #include <Arduino.h>
-#include <SD.h>
-#include <TMRpcm.h>
 #include <Wire.h>
-
 
 #include "../lib/constants.h"
 #include "module-results.h"
 
-#define SPEAKER_PIN 9
-#define SD_CHIPSELECT_PIN 4
 #define LOOP_INTERVAL_MS 100
 
 
@@ -29,10 +24,12 @@ class Master
 	byte strikes = 0;
 	byte deactivatedModules = 0;
 
-	TMRpcm tmrpcm;
-
 	void sendCommand(byte command, byte arg)
 	{
+		if(this->moduleCount == 0)
+			return;
+			
+		
 		Wire.beginTransmission(0);
 		Wire.write(command);
 		if(arg != 0)
@@ -42,12 +39,27 @@ class Master
 		if (error != 0)
 		{
 			Serial.print("Error sending command: ");
+			Serial.print(command);
+			Serial.print(", Error: ");
 			Serial.println(error);
+
+			/** 
+				 * Errors
+				 * 0 .. success
+				 * 1 .. length to0 long for buffer
+				 * 2 .. address send, NACK received
+				 * 3 .. data send, NACK received
+				 * 4 .. other twi error (lost bus arbitration, bus error, ..)
+				 * 5 .. timeout
+				*/
 		}
 	}
 
 	void sendCommand(byte command, unsigned int arg)
 	{
+		if(this->moduleCount == 0)
+			return;
+
 		Wire.beginTransmission(0);
 		Wire.write(command);
 		if(arg != 0)
@@ -57,7 +69,20 @@ class Master
 		if (error != 0)
 		{
 			Serial.print("Error sending command: ");
+			Serial.print(command);
+			Serial.print(", Error: ");
 			Serial.println(error);
+
+			
+			/** 
+				 * Errors
+				 * 0 .. success
+				 * 1 .. length too long for buffer
+				 * 2 .. address send, NACK received
+				 * 3 .. data send, NACK received
+				 * 4 .. other twi error (lost bus arbitration, bus error, ..)
+				 * 5 .. timeout
+				*/
 		}
 	}
 
@@ -135,13 +160,12 @@ class Master
 		{
 			lastSecondMillis = now;
 			// TODO: update screen
-
 				
-				Serial.print("Sending Time-remaining command: ");
-				Serial.print(timeRemainingInS);
-				Serial.println("s");
+			Serial.print("Sending Time-remaining command: ");
+			Serial.print(timeRemainingInS);
+			Serial.println("s");
 
-				sendCommand(COMMAND_TIME, timeRemainingInS);
+			sendCommand(COMMAND_TIME, timeRemainingInS);
 		}
 	}
 
@@ -149,7 +173,6 @@ class Master
 	{
 		Serial.println("New strike");
 		this->sendCommand(COMMAND_STRIKE);
-		this->tmrpcm.play("strike.wav");
 	}
 
 	void moduleDeactivated()
@@ -168,16 +191,12 @@ public:
 	{
 		Serial.println("Master booting");
 
-		tmrpcm.speakerPin = SPEAKER_PIN;
-
-		if (!SD.begin(SD_CHIPSELECT_PIN))
-			Serial.println("	Failed to mount SD card");
-
 		this->scanForModules();
 	}
 
 	void setDifficulty(byte diff)
 	{
+		Serial.println("a");
 		// TODO: should we support changing difficulty when armed?
 		difficulty = diff;
 		sendCommand(COMMAND_DIFFICULTY, difficulty);

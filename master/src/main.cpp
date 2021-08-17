@@ -5,9 +5,9 @@
 #include "../lib/button.h"
 
 Master* master;
-Button btnDifficulty0(1, INPUT_PULLUP);
-Button btnDifficulty1(1, INPUT_PULLUP);
-Button btnDifficulty2(1, INPUT_PULLUP);
+Button btnDifficulty0(7, INPUT_PULLUP);
+Button btnDifficulty1(8, INPUT_PULLUP);
+Button btnDifficulty2(9, INPUT_PULLUP);
 
 void setup()
 {
@@ -26,12 +26,12 @@ void setup()
 void loop()
 {
 	// TODO: should we support ad hoc difficulty changing?
-	if(btnDifficulty0.pressed())
-		master->setDifficulty(0);
-	else if(btnDifficulty1.pressed())
-		master->setDifficulty(1);
-	else if(btnDifficulty2.pressed())
-		master->setDifficulty(2);
+	// if(btnDifficulty0.pressed())
+	// 	master->setDifficulty(0);
+	// else if(btnDifficulty1.pressed())
+	// 	master->setDifficulty(1);
+	// else if(btnDifficulty2.pressed())
+	// 	master->setDifficulty(2);
 
 	unsigned long now = millis();
 	master->loop(now);
