@@ -159,6 +159,9 @@ class Master
 		if (now > lastSecondMillis + 1000)
 		{
 			lastSecondMillis = now;
+
+			timeRemainingInS--;
+			
 			// TODO: update screen
 				
 			Serial.print("Sending Time-remaining command: ");
@@ -196,7 +199,6 @@ public:
 
 	void setDifficulty(byte diff)
 	{
-		Serial.println("a");
 		// TODO: should we support changing difficulty when armed?
 		difficulty = diff;
 		sendCommand(COMMAND_DIFFICULTY, difficulty);

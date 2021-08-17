@@ -20,6 +20,7 @@ void setup()
 
 	master = new Master();
 
+	master->setDifficulty(1);
 	master->arm();
 }
 
