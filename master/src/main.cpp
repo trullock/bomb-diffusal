@@ -11,7 +11,7 @@ Button btnDifficulty2(9, INPUT_PULLUP);
 
 void setup()
 {
-
+	Wire.setClock(100000);
 	Wire.begin();
 	Serial.begin(9600);
 
@@ -34,6 +34,5 @@ void loop()
 	// else if(btnDifficulty2.pressed())
 	// 	master->setDifficulty(2);
 
-	unsigned long now = millis();
-	master->loop(now);
+	master->loop();
 }

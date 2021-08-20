@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <Adafruit_SSD1306.h>
 
 #include "../lib/constants.h"
 #include "module-results.h"
@@ -11,7 +12,7 @@ class Master
 {
 	// https://github.com/Koepel/How-to-use-the-Arduino-Wire-library/wiki
 
-	byte moduleAddresses[127];
+	byte moduleAddresses[16];
 	byte moduleCount = 0;
 
 	bool armed = false;
@@ -23,6 +24,8 @@ class Master
 
 	byte strikes = 0;
 	byte deactivatedModules = 0;
+
+	Adafruit_SSD1306* display;
 
 	void sendCommand(byte command, byte arg)
 	{
@@ -124,17 +127,25 @@ class Master
 	{
 		Serial.println("Scanning for modules...");
 		byte error;
-		for (byte address = 1; address < 127; address++)
+		for (byte address = 1; address < 15; address++)
 		{
 			Wire.beginTransmission(address);
 			error = Wire.endTransmission();
 
 			if (error == 0)
 			{
-				Serial.print("	Module found at address 0x");
-				if (address < 16)
-					Serial.print("0");
-				Serial.println(address, HEX);
+				// DONT uncomment these, it creates all kinds of wierd multi-threading looking issues which are unexplainable. Winner.
+
+				//Serial.print("	Module found at address 0x");
+				//if (address < 16)
+				//	Serial.print("0");
+				//Serial.println(address, HEX);
+
+				if(address == 0x3C)
+				{
+					//Serial.println("		Skipping");
+					continue;
+				}
 
 				moduleAddresses[moduleCount] = address;
 				moduleCount++;
@@ -161,12 +172,19 @@ class Master
 			lastSecondMillis = now;
 
 			timeRemainingInS--;
-			
-			// TODO: update screen
-				
-			Serial.print("Sending Time-remaining command: ");
-			Serial.print(timeRemainingInS);
-			Serial.println("s");
+		
+			byte mins = timeRemainingInS / 60;
+			byte secs = timeRemainingInS % 60;
+
+			this->display->setCursor(0, 0);
+			this->display->print(mins);
+			this->display->print(":");
+			this->display->print(secs);
+			this->display->display();
+
+			// Serial.print("Sending Time-remaining command: ");
+			// Serial.print(timeRemainingInS);
+			// Serial.println("s");
 
 			sendCommand(COMMAND_TIME, timeRemainingInS);
 		}
@@ -194,6 +212,17 @@ public:
 	{
 		Serial.println("Master booting");
 
+		this->display = new Adafruit_SSD1306(128, 64, &Wire);
+		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
+			Serial.println(F("SSD1306 allocation failed"));
+		
+		this->display->clearDisplay();
+		this->display->display();
+
+		this->display->setTextSize(2);
+		this->display->setTextColor(SSD1306_WHITE, SSD1306_BLACK);
+
+
 		this->scanForModules();
 	}
 
@@ -217,12 +246,17 @@ public:
 		this->sendCommand(COMMAND_ARM);
 	}
 
-	void loop(unsigned long now)
+	void loop()
 	{
+		if(!this->armed)
+			return;
+
+		unsigned long now = millis();
+
 		// Dont hammer the slaves, give them some breathing room
 		if(now < this->lastLoopMillis + LOOP_INTERVAL_MS)
 			return;
-			
+		
 		ModuleResults results = readModules();
 
 		if (results.strikes != this->strikes)
