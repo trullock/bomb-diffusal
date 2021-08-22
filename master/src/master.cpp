@@ -4,14 +4,13 @@
 
 #include "../lib/constants.h"
 #include "module-results.h"
+#include "sfx.h"
+#include "../lib/sounds.h"
 
 #define LOOP_INTERVAL_MS 100
 
-
 class Master
 {
-	// https://github.com/Koepel/How-to-use-the-Arduino-Wire-library/wiki
-
 	byte moduleAddresses[16];
 	byte moduleCount = 0;
 
@@ -26,6 +25,7 @@ class Master
 	byte deactivatedModules = 0;
 
 	Adafruit_SSD1306* display;
+	Sfx* sfx;
 
 	void sendCommand(byte command, byte arg)
 	{
@@ -182,28 +182,42 @@ class Master
 			this->display->print(secs);
 			this->display->display();
 
-			// Serial.print("Sending Time-remaining command: ");
-			// Serial.print(timeRemainingInS);
-			// Serial.println("s");
+			if(secs == 0)
+				this->sfx->selfDesctructionIn(mins);
 
 			sendCommand(COMMAND_TIME, timeRemainingInS);
 		}
 	}
 
-	void strike()
+	void strike(byte strikes)
 	{
 		Serial.println("New strike");
+		this->strikes = strikes;
 		this->sendCommand(COMMAND_STRIKE);
+		this->sfx->enqueue(Sounds::DeactivationFailure);
 	}
 
-	void moduleDeactivated()
+	void moduleDeactivated(byte modules)
 	{
 		Serial.println("New module deactivated");
+		this->deactivatedModules = modules;
+		this->sfx->enqueue(Sounds::ComponentDeactivated);
 	}
 
-	void handleNotifications(byte notifications)
+	void processModules(unsigned long now)
 	{
+		ModuleResults results = readModules();
 
+		if (results.strikes != this->strikes)
+			this->strike(results.strikes);
+
+		if (results.deactivatedModules != deactivatedModules)
+			this->moduleDeactivated(results.deactivatedModules);
+		
+		if (results.notification != 0)
+			this->sfx->enqueue(results.notification);
+		
+		this->updateCountdown(now);
 	}
 
 public:
@@ -211,6 +225,10 @@ public:
 	Master()
 	{
 		Serial.println("Master booting");
+
+		// TODO: can we use any pins?
+		this->sfx = new Sfx(27, 26, 25);
+		this->sfx->enqueue(Sounds::SystemBootInitiated);
 
 		this->display = new Adafruit_SSD1306(128, 64, &Wire);
 		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
@@ -221,7 +239,6 @@ public:
 
 		this->display->setTextSize(2);
 		this->display->setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-
 
 		this->scanForModules();
 	}
@@ -236,7 +253,7 @@ public:
 			timeRemainingInS = 45 * 60;
 		else if (difficulty == 1)
 			timeRemainingInS = 30 * 60;
-		if (difficulty == 2)
+		else if (difficulty == 2)
 			timeRemainingInS = 20 * 60;
 	}
 
@@ -244,10 +261,13 @@ public:
 	{
 		this->armed = true;
 		this->sendCommand(COMMAND_ARM);
+		this->sfx->enqueue(Sounds::WeaponActivated);
 	}
 
 	void loop()
 	{
+		this->sfx->loop();
+		
 		if(!this->armed)
 			return;
 
@@ -257,21 +277,7 @@ public:
 		if(now < this->lastLoopMillis + LOOP_INTERVAL_MS)
 			return;
 		
-		ModuleResults results = readModules();
-
-		if (results.strikes != this->strikes)
-			this->strike();
-
-		if (results.deactivatedModules != deactivatedModules)
-			this->moduleDeactivated();
-		
-		if (results.notification != 0)
-			this->handleNotifications(results.notification);
-
-		this->updateCountdown(now);
-
-		this->strikes = results.strikes;
-		this->deactivatedModules = results.deactivatedModules;
+		this->processModules(now);
 
 		this->lastLoopMillis = now;
 	}
