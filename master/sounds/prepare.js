@@ -25,8 +25,8 @@ let destDir = '../data';
 let files = fs.readdirSync(srcDir);
 
 let numbers = files.filter(f => f.startsWith('Number'));
-let letters = files.filter(f => f.startsWith('Letter'));
-let rest = files.filter(f => numbers.indexOf(f) == -1);
+let letters = files.filter(f => f.startsWith('Nato'));
+let rest = files.filter(f => numbers.indexOf(f) == -1 && letters.indexOf(f) == -1);
 
 function copyToDest(file, num)
 {
@@ -43,9 +43,9 @@ let linesNumbers = numbers.map(file => {
 
 // Process the letters, they are all offset at 200
 let linesLetters = letters.map(file => {
-	let num = parseInt(file.substr("Letter".length), 10);
+	let num = file.charCodeAt(4) - 65;
 	copyToDest(file, num);
-	return '	Letter' + num + ' = ' + (100 + num);
+	return '	' + file.substr(0, file.length - 4) + ' = ' + (200 + num);
 });
 
 // Process the rest of the lines

@@ -15,7 +15,15 @@ class Sfx {
 	byte queueTail;
 	bool playing;
 
+	/**
+	 * Plays whatever is next in the queue
+	 */
 	void playQueue();
+	
+	/**
+	 * Should be called once a single sound has finished playing
+	 */
+	void playbackFinished();
 
 public:
 	Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout);
@@ -39,7 +47,7 @@ public:
 	 * Hack to hook into Audio.h's callback mechanism
 	 * Should be called once a single sound has finished playing
 	 */
-	static void playbackFinished();
+	static void playbackFinishedHandler();
 
 	/**
 	 * Must be regularly called to maintain audio playback

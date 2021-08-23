@@ -182,8 +182,13 @@ class Master
 			this->display->print(secs);
 			this->display->display();
 
-			if(secs == 0)
+			// only announce whole mins, 10,20,30,etc and 1,2,3,4,5,6,7,8,9
+			if(secs == 0 && (mins % 10 == 0 || mins < 10))
 				this->sfx->selfDesctructionIn(mins);
+
+			// 10s remaining countdown
+			if(mins == 0 && secs == 10)
+				this->sfx->detonation10sCountdown();
 
 			sendCommand(COMMAND_TIME, timeRemainingInS);
 		}
@@ -216,8 +221,6 @@ class Master
 		
 		if (results.notification != 0)
 			this->sfx->enqueue(results.notification);
-		
-		this->updateCountdown(now);
 	}
 
 public:
@@ -261,7 +264,11 @@ public:
 	{
 		this->armed = true;
 		this->sendCommand(COMMAND_ARM);
+
 		this->sfx->enqueue(Sounds::WeaponActivated);
+		
+		byte mins = this->timeRemainingInS / 60;
+		this->sfx->selfDesctructionIn(mins);
 	}
 
 	void loop()
@@ -278,6 +285,8 @@ public:
 			return;
 		
 		this->processModules(now);
+		
+		this->updateCountdown(now);
 
 		this->lastLoopMillis = now;
 	}

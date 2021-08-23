@@ -13,7 +13,9 @@ Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
 	memset(this->queue, 0, sizeof(this->queue));
 	this->queueHead = 0;
 	this->queueTail = 0;
+	
 	this->playing = false;
+
 	self = this;
 
 	if(!SPIFFS.begin(false)){
@@ -55,8 +57,8 @@ void Sfx::playQueue()
 	path += queueValue;
 	path += ".mp3";
 
-	Serial.print("Playing: ");
-	Serial.println(path);
+	// Serial.print("Playing: ");
+	// Serial.println(path);
 
 	this->audio.connecttoFS(SPIFFS, path.c_str());
 	this->playing = true;
@@ -64,29 +66,46 @@ void Sfx::playQueue()
 
 void Sfx::playbackFinished()
 {
-	self->playing = false;
-	self->queue[self->queueHead] = 0;
-	self->playQueue();
+	this->playing = false;
+	this->queue[this->queueHead] = 0;
+	this->playQueue();
 }
 
+
+void Sfx::playbackFinishedHandler()
+{
+	self->playbackFinished();
+}
 void audio_eof_mp3(const char *info)
 {
-	Sfx::playbackFinished();
+	Sfx::playbackFinishedHandler();
 }
 
 
 void Sfx::selfDesctructionIn(byte mins)
 {
-	// only announce 10,20,30,etc and 1,2,3,4,5,6,7,8,9
-	if(mins % 10 != 0 && mins > 10)
-		return;
-
 	this->enqueue(Sounds::SelfDestructionIn);
 	
-	byte sound = 100 + mins;
-	this->enqueue(sound);
+	byte sound = 0;
 
-	//this->enqueue(mins == 1 ? Sounds::Min : Sounds::Mins);
+	// This doesnt support 11-19, but thats ok because we should never be doing that
+
+	byte ones = mins % 10;
+	byte tens = mins / 10;
+
+	if(tens > 0)
+	{
+		sound = 100 + tens;
+		this->enqueue(sound);
+	}
+
+	if(ones > 0)
+	{
+		sound = 100 + ones;
+		this->enqueue(ones);
+	}
+
+	this->enqueue(mins == 1 ? Sounds::Minute : Sounds::Minutes);
 }
 
 void Sfx::detonation10sCountdown()
