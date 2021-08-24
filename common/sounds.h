@@ -54,7 +54,12 @@ enum Sounds : byte {
 	NatoRomeo = 217,
 	NatoSierra = 218,
 	NatoTango = 219,
-	NatoUniform = 220
+	NatoUniform = 220,
+	NatoVictor = 221,
+	NatoWhisky = 222,
+	NatoXray = 223,
+	NatoYankee = 224,
+	NatoZulu = 225
 };
 
 #endif

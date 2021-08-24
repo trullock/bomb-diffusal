@@ -13,7 +13,7 @@ Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
 	memset(this->queue, 0, sizeof(this->queue));
 	this->queueHead = 0;
 	this->queueTail = 0;
-	
+
 	this->playing = false;
 
 	self = this;
@@ -57,10 +57,12 @@ void Sfx::playQueue()
 	path += queueValue;
 	path += ".mp3";
 
-	// Serial.print("Playing: ");
-	// Serial.println(path);
+	if(!this->audio.connecttoFS(SPIFFS, path.c_str()))
+	{			
+		Serial.print("Failed to play: ");
+		Serial.println(path);
+	}
 
-	this->audio.connecttoFS(SPIFFS, path.c_str());
 	this->playing = true;
 }
 
@@ -84,6 +86,10 @@ void audio_eof_mp3(const char *info)
 
 void Sfx::selfDesctructionIn(byte mins)
 {
+	Serial.print("Playing: Self destruction in ");
+	Serial.print(mins);
+	Serial.println("mins(s)");
+
 	this->enqueue(Sounds::SelfDestructionIn);
 	
 	byte sound = 0;
@@ -95,7 +101,7 @@ void Sfx::selfDesctructionIn(byte mins)
 
 	if(tens > 0)
 	{
-		sound = 100 + tens;
+		sound = 100 + (tens * 10);
 		this->enqueue(sound);
 	}
 

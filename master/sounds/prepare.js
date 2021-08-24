@@ -36,7 +36,7 @@ function copyToDest(file, num)
 // Process the numbers, they are all offset at 100
 let linesNumbers = numbers.map(file => {
 	let num = parseInt(file.substr("Number".length), 10);
-	copyToDest(file, num);
+	copyToDest(file, 100 + num);
 	return '	Number' + num + ' = ' + (100 + num);
 });
 
@@ -44,7 +44,7 @@ let linesNumbers = numbers.map(file => {
 // Process the letters, they are all offset at 200
 let linesLetters = letters.map(file => {
 	let num = file.charCodeAt(4) - 65;
-	copyToDest(file, num);
+	copyToDest(file, 200 + num);
 	return '	' + file.substr(0, file.length - 4) + ' = ' + (200 + num);
 });
 
