@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <SD.h>
 #include "master.cpp"
 
 #include "../lib/button.h"
@@ -12,7 +13,7 @@ Button btnDifficulty2(9, INPUT_PULLUP);
 void setup()
 {
 	Wire.setClock(100000);
-	Wire.begin();
+	Wire.begin(4, 5);
 	Serial.begin(9600);
 
 	// let modules boot first

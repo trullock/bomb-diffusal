@@ -1,22 +1,20 @@
 #include "sfx.h"
 #include "../lib/sounds.h"
 #include <SPIFFS.h>
-// #include "WiFi.h"
-
-Sfx* Sfx::self;
 
 Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
 {
-	audio.setPinout(bclk, lrc, dout);
-    audio.setVolume(10); // 0...21
+	this->out = new AudioOutputI2S();
+	this->mp3 = new AudioGeneratorMP3();
+
+	//audio.setPinout(bclk, lrc, dout);
+    //audio.setVolume(10); // 0...21
 
 	memset(this->queue, 0, sizeof(this->queue));
 	this->queueHead = 0;
 	this->queueTail = 0;
 
 	this->playing = false;
-
-	self = this;
 
 	if(!SPIFFS.begin(false)){
 		Serial.println("An Error has occurred while mounting SPIFFS");
@@ -26,7 +24,14 @@ Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
 
 void Sfx::loop()
 {	
-	this->audio.loop();
+	if (this->mp3->isRunning()) {
+    	if (!this->mp3->loop()) 
+		{
+			this->mp3->stop();
+			this->playing = false;
+			this->playbackFinished();
+		}
+	}
 }
 
 void Sfx::enqueue(byte sound)
@@ -53,11 +58,12 @@ void Sfx::playQueue()
 	if(queueValue == 0)
 		return;
 
-	String path = "";
+	String path = "/";
 	path += queueValue;
 	path += ".mp3";
 
-	if(!this->audio.connecttoFS(SPIFFS, path.c_str()))
+	this->file = new AudioFileSourceSPIFFS(path.c_str());
+	if(!mp3->begin(file, out))
 	{			
 		Serial.print("Failed to play: ");
 		Serial.println(path);
@@ -69,20 +75,10 @@ void Sfx::playQueue()
 void Sfx::playbackFinished()
 {
 	this->playing = false;
+	delete this->file;
 	this->queue[this->queueHead] = 0;
 	this->playQueue();
 }
-
-
-void Sfx::playbackFinishedHandler()
-{
-	self->playbackFinished();
-}
-void audio_eof_mp3(const char *info)
-{
-	Sfx::playbackFinishedHandler();
-}
-
 
 void Sfx::selfDesctructionIn(byte mins)
 {

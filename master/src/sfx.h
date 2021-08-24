@@ -2,18 +2,20 @@
 #define sfx_h
 
 #include <Arduino.h>
-#include <Audio.h>
-
-#define SFX_Self_Destruction_In 1
+#include "../lib/Audio/AudioFileSourceSPIFFS.h"
+#include "../lib/Audio/AudioGeneratorMP3.h"
+#include "../lib/Audio/AudioOutputI2S.h"
 
 class Sfx {
 
-	static Sfx* self;
-	Audio audio;
 	byte queue[16];
 	byte queueHead;
 	byte queueTail;
 	bool playing;
+
+	AudioGeneratorMP3 *mp3;
+	AudioFileSourceSPIFFS *file;
+	AudioOutputI2S *out;
 
 	/**
 	 * Plays whatever is next in the queue
@@ -42,12 +44,6 @@ public:
 	 * Announce "Detonation in 10, 9, 8, 7, 6, 5, 4, 3, 2, 1"
 	 */
 	void detonation10sCountdown();
-
-	/**
-	 * Hack to hook into Audio.h's callback mechanism
-	 * Should be called once a single sound has finished playing
-	 */
-	static void playbackFinishedHandler();
 
 	/**
 	 * Must be regularly called to maintain audio playback
