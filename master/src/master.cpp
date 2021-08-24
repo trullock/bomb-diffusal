@@ -229,8 +229,7 @@ public:
 	{
 		Serial.println("Master booting");
 
-		// TODO: can we use any pins?
-		this->sfx = new Sfx(27, 26, 25);
+		this->sfx = new Sfx(26, 25, 22);
 		this->sfx->enqueue(Sounds::SystemBootInitiated);
 
 		this->display = new Adafruit_SSD1306(128, 64, &Wire);

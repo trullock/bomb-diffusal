@@ -27,5 +27,9 @@
 			"path": "capacitors"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"new": "cpp"
+		}
+	}
 }
