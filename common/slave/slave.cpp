@@ -4,15 +4,6 @@
 
 Slave* Slave::self = nullptr;
 
-[[Deprecated]]
-Slave::Slave(byte i2cAddress) : Slave(i2cAddress, 0)
-{
-
-}
-
-/**
- * Creates a new slave with the given I2C address with the given raise-interrupt-pin
- */
 Slave::Slave(byte i2cAddress, uint8_t raiseInterruptPin)
 {
 	self = this;
@@ -29,22 +20,15 @@ Slave::Slave(byte i2cAddress, uint8_t raiseInterruptPin)
 	Wire.onRequest(Slave::reportStatusWrapper);
 	Wire.onReceive(Slave::receiveCommandWrapper);
 
-	Serial.print("Module joining I2C bus with address: ");
+	Serial.print("Joining I2C bus with address: ");
 	Serial.println(this->i2cAddress);
 }
 
-/**
- * Static hack to support easy wire callbacks
- */
 void Slave::reportStatusWrapper()
 {
 	self->reportStatus();
 }
 
-
-/**
- * Static hack to support easy wire callbacks
- */
 void Slave::receiveCommandWrapper(int x)
 {
 	self->receiveCommand(x);
@@ -61,9 +45,6 @@ void Slave::endMasterInterrupt(){
 	digitalWrite(this->raiseInterruptPin, LOW);
 }
 
-/**
- * Reports this module's status back to the master
- */
 void Slave::reportStatus()
 {
 	Wire.write(this->state);
@@ -116,12 +97,15 @@ void Slave::strike()
 
 void Slave::deactivate()
 {
+	if(this->state == STATE_DEACTIVATED)
+		return;
+	
 	Serial.println("Deactivated");
 	this->state = STATE_DEACTIVATED;
 	this->raiseMasterInterrupt();
 }
 
-bool Slave::playSfx(byte sound)
+bool Slave::queueSfx(byte sound)
 {
 	if(this->sfxQueueLength == sizeof(this->sfxQueue) - 1)
 		return false;
@@ -132,7 +116,6 @@ bool Slave::playSfx(byte sound)
 	this->sfxQueue[this->sfxQueueLength++] = sound;
 	return true;
 }
-
 
 void Slave::setDifficulty(byte diff)
 {

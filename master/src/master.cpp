@@ -105,11 +105,6 @@ class Master
 		{
 			// TODO: can we be less wasteful and not send loads ofs empty sfx queue entries every time?
 			unsigned int bytesReceived = Wire.requestFrom((int)moduleAddresses[i], 2 + MODULE_MAX_SFX_QUEUE_LENGTH);
-			Serial.print("Bytes received: ");
-			Serial.println(bytesReceived);
-
-			Serial.print("available: ");
-			Serial.println(Wire.available());
 
 			byte state = Wire.read();
 			byte strikes = Wire.read();
@@ -170,6 +165,7 @@ class Master
 		Serial.println("New strike");
 		this->strikes = strikes;
 		this->sendCommand(COMMAND_STRIKE);
+		// TODO, should this abort the current queue?
 		this->sfx->enqueue(Sounds::DeactivationFailure);
 	}
 

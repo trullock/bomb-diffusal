@@ -31,13 +31,12 @@ public:
 		
 		if(btnNotify.pressed())
 		{
-			this->playSfx(Sounds::IncomingMessage);
-			this->playSfx(Sounds::NatoAlpha);
-			this->playSfx(Sounds::NatoBravo);
-			this->playSfx(Sounds::NatoCharlie);
-			this->playSfx(Sounds::NatoDelta);
-				this->raiseMasterInterrupt();
-
+			this->queueSfx(Sounds::IncomingMessage);
+			this->queueSfx(Sounds::NatoAlpha);
+			this->queueSfx(Sounds::NatoBravo);
+			this->queueSfx(Sounds::NatoCharlie);
+			this->queueSfx(Sounds::NatoDelta);
+			this->raiseMasterInterrupt();
 		}
 	}
 };

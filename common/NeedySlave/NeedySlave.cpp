@@ -1,10 +1,8 @@
 #include "./NeedySlave.h"
 
-NeedySlave::NeedySlave(int i2caddress) : Slave(i2caddress)
+NeedySlave::NeedySlave(byte i2caddress, uint8_t raiseInterruptPin) : Slave(i2caddress, raiseInterruptPin)
 {
-
 }
-
 
 void NeedySlave::arm()
 {
