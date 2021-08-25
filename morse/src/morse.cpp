@@ -271,13 +271,17 @@ public:
 		Slave(5), 
 		btnEnter(8, INPUT_PULLUP), 
 		knob(6, 7),
-		display(12, 13, 10, 1)
+		display(12, 11, 10, 1)
 	{
 		pinMode(Morse_LED_Pin, OUTPUT);
 
 		this->display.shutdown(0, false);
 		this->display.setIntensity(0, 8);
 		this->display.clearDisplay(0);
+
+		// dev mode hacks
+		this->setDifficulty(1);
+		this->arm();
 	}
 
 	void loop()

@@ -25,6 +25,9 @@
 		},
 		{
 			"path": "capacitors"
+		},
+		{
+			"path": "test-slave"
 		}
 	],
 	"settings": {

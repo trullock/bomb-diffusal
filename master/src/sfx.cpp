@@ -7,7 +7,7 @@ Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
 	this->out = new AudioOutputI2S();
 	out->SetChannels(1);
 	out->SetOutputModeMono(true);
-	out->SetGain(0.5);
+	out->SetGain(0.1);
 	out->SetPinout(bclk, lrc, dout);
 	this->mp3 = new AudioGeneratorMP3();
 
@@ -37,12 +37,12 @@ void Sfx::loop()
 
 void Sfx::enqueue(byte sound)
 {
+	// TODO: this will misbehave is you try to enqueue more than the queue size, what should happen when you queue the 17th sound?
 	this->queueTail++;
 	if(this->queueTail == sizeof(this->queue))
 		this->queueTail = 0;
 
 	this->queue[this->queueTail] = sound;
-
 	this->playQueue();
 }
 
@@ -50,10 +50,14 @@ void Sfx::playQueue()
 {
 	if(this->playing)
 		return;
-
-	this->queueHead++;
-	if(this->queueHead == sizeof(this->queue))
-		this->queueHead = 0;
+		
+	// if we have something to play
+	if(this->queueHead != this->queueTail)
+	{
+		this->queueHead++;
+		if(this->queueHead == sizeof(this->queue))
+			this->queueHead = 0;
+	}
 
 	byte queueValue = this->queue[this->queueHead];
 	if(queueValue == 0)
@@ -63,11 +67,15 @@ void Sfx::playQueue()
 	path += queueValue;
 	path += ".mp3";
 
+	Serial.print("Playing: ");
+	Serial.println(path);
+
 	this->file = new AudioFileSourceSPIFFS(path.c_str());
 	if(!mp3->begin(file, out))
 	{			
 		Serial.print("Failed to play: ");
 		Serial.println(path);
+		return;
 	}
 
 	this->playing = true;

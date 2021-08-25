@@ -4,18 +4,28 @@
 
 Slave* Slave::self = nullptr;
 
+[[Deprecated]]
+Slave::Slave(byte i2cAddress) : Slave(i2cAddress, 0)
+{
+
+}
+
 /**
- * Creates a new slave with the given I2C address
+ * Creates a new slave with the given I2C address with the given raise-interrupt-pin
  */
-Slave::Slave(int i2cAddress)
+Slave::Slave(byte i2cAddress, uint8_t raiseInterruptPin)
 {
 	self = this;
+
 	this->i2cAddress = i2cAddress;
+
+	this->raiseInterruptPin = raiseInterruptPin;
+	this->interrupting = false;
+	pinMode(raiseInterruptPin, OUTPUT);
 
 	Wire.begin(this->i2cAddress);
 	// enable broadcasts to be received
 	TWAR = (this->i2cAddress << 1) | 1;
-
 	Wire.onRequest(Slave::reportStatusWrapper);
 	Wire.onReceive(Slave::receiveCommandWrapper);
 
@@ -40,16 +50,27 @@ void Slave::receiveCommandWrapper(int x)
 	self->receiveCommand(x);
 }
 
+void Slave::raiseMasterInterrupt()
+{
+	this->interrupting = true;
+	digitalWrite(this->raiseInterruptPin, HIGH);
+}
+
+void Slave::endMasterInterrupt(){
+	this->interrupting = false;
+	digitalWrite(this->raiseInterruptPin, LOW);
+}
+
 /**
  * Reports this module's status back to the master
  */
 void Slave::reportStatus()
 {
-	
 	Wire.write(this->state);
 	Wire.write(this->strikes);
-	Wire.write(this->pendingNotification);
-	this->pendingNotification = 0;
+	for(byte i = 0; i < this->sfxQueueLength; i++)
+		Wire.write(this->sfxQueue[i]);
+	this->sfxQueueLength = 0;
 }
 
 void Slave::updateTimeRemaining(unsigned int secs)
@@ -62,16 +83,23 @@ void Slave::reportStrike()
 	Serial.println("Reporting strike");
 	// The master will query this and relay it back as a Strike() instruction
 	this->strikes++;
+	this->raiseMasterInterrupt();
 }
 
 void Slave::loop()
 {
+	// always end this on every loop. Clock speed of Master and Slave should be sufficient 
+	// for Master to have noticed the interrupt before the Slave loops
+	this->endMasterInterrupt();
+
 	this->handleCommand();
 }
 
 void Slave::arm()
 {
 	Serial.println("Arming");
+	this->strikes = 0;
+	// State set by sub-classes
 }
 
 void Slave::explode()
@@ -90,7 +118,21 @@ void Slave::deactivate()
 {
 	Serial.println("Deactivated");
 	this->state = STATE_DEACTIVATED;
+	this->raiseMasterInterrupt();
 }
+
+bool Slave::playSfx(byte sound)
+{
+	if(this->sfxQueueLength == sizeof(this->sfxQueue) - 1)
+		return false;
+
+	Serial.print("Playing Sfx: ");
+	Serial.println(sound);
+
+	this->sfxQueue[this->sfxQueueLength++] = sound;
+	return true;
+}
+
 
 void Slave::setDifficulty(byte diff)
 {
