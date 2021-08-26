@@ -35,8 +35,25 @@ void Sfx::loop()
 	}
 }
 
-void Sfx::enqueue(byte sound)
+void Sfx::enqueue(byte sound, byte mode)
 {
+	// if we are playing next or interrupting
+	if(mode != SFX_ENQUEUE_MODE__DEFAULT)
+	{
+		this->queueTail = this->queueHead;
+		// wipe the whole queue, doesnt matter that we're wiping the head as its already playing
+		memset(this->queue, 0, sizeof(this->queue));
+	}
+	
+	if(mode == SFX_ENQUEUE_MODE__INTERRUPT)
+	{
+		if(this->mp3->isRunning())
+		{
+			this->playing = false;
+			this->mp3->stop();
+		}
+	}
+
 	// TODO: this will misbehave is you try to enqueue more than the queue size, what should happen when you queue the 17th sound?
 	this->queueTail++;
 	if(this->queueTail == sizeof(this->queue))

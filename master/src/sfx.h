@@ -6,6 +6,10 @@
 #include "../lib/Audio/AudioGeneratorMP3.h"
 #include "../lib/Audio/AudioOutputI2S.h"
 
+#define SFX_ENQUEUE_MODE__DEFAULT 0
+#define SFX_ENQUEUE_MODE__PLAYNEXT 1
+#define SFX_ENQUEUE_MODE__INTERRUPT 2
+
 class Sfx {
 
 	byte queue[16];
@@ -32,8 +36,9 @@ public:
 
 	/** 
 	 * Enqueues (and plays) the given sound
+	 * Use mode to control queuing behaviour
 	 */
-	void enqueue(byte sound);
+	void enqueue(byte sound, byte mode = 0);
 
 	/**
 	 * Announce "Self destruction in X min(s)"

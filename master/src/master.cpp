@@ -164,7 +164,11 @@ class Master
 	{
 		Serial.println("New module deactivated");
 		this->deactivatedModules = modules;
-		this->sfx->enqueue(Sounds::ComponentDeactivated);
+
+		if(this->deactivatedModules == this->moduleCount)
+			this->deactivate();
+		else
+			this->sfx->enqueue(Sounds::ComponentDeactivated);
 	}
 
 	void setSerialNumber()
@@ -174,6 +178,13 @@ class Master
 
 		for(byte i = 0; i < sizeof(this->serialNumber); i++)
 			this->serialNumber[i] = random(0, 36);
+	}
+
+	void deactivate()
+	{
+		this->sfx->enqueue(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
+		this->sfx->enqueue(Sounds::PowerDown);
+		this->armed = false;
 	}
 
 	void explode()
