@@ -11,6 +11,7 @@ Button btnDifficulty1(8, INPUT_PULLUP);
 Button btnDifficulty2(9, INPUT_PULLUP);
 volatile bool moduleInterruptRequest;
 bool booted = false;
+unsigned long lastMillis;
 
 void IRAM_ATTR moduleISR()
 {
@@ -27,6 +28,7 @@ void setup()
 	attachInterrupt(23, moduleISR, RISING);
 
 	master = new Master();
+	lastMillis = millis();
 }
 
 void loop()
@@ -41,8 +43,8 @@ void loop()
 
 	unsigned long now = millis();
 
-	// wait 2s for all modules to have booted
-	if(!booted && now > 2000)
+	// wait some time for all modules to have booted + let the Booting sound play, as scanForModules is blocking and breaks the audio
+	if(!booted && now > 2500 + lastMillis)
 	{
 		booted = true;
 		master->scanForModules();

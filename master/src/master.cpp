@@ -5,7 +5,7 @@
 #include "../lib/constants.h"
 #include "module-results.h"
 #include "sfx.h"
-#include "../lib/sounds.h"
+#include <sounds.h>
 
 #define LOOP_INTERVAL_MS 100
 #define BROADCAST 0
@@ -118,7 +118,6 @@ class Master
 		if (now < lastSecondMillis + 1000)
 			return;
 
-
 		if (timeRemainingInS == 0)
 			return;
 
@@ -136,7 +135,7 @@ class Master
 		this->display->display();
 
 		// only announce whole mins, 10,20,30,etc and 1,2,3,4,5,6,7,8,9
-		if(secs == 0 && (mins % 10 == 0 || mins < 10))
+		if(secs == 0 && mins > 0 && (mins % 10 == 0 || mins < 10))
 			this->sfx->selfDesctructionIn(mins);
 
 		if(mins == 0)
@@ -180,6 +179,7 @@ class Master
 	void explode()
 	{
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
+		this->sfx->enqueue(Sounds::Explosion);
 		// TODO: render explosion on master displays
 	}
 
@@ -214,7 +214,7 @@ public:
 		if(difficulty == 0)
 			timeRemainingInS = 45 * 60;
 		else if (difficulty == 1)
-			timeRemainingInS = 30 * 60;
+			timeRemainingInS = 30;//30 * 60;
 		else if (difficulty == 2)
 			timeRemainingInS = 20 * 60;
 	}

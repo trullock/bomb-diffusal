@@ -1,5 +1,5 @@
 #include "sfx.h"
-#include "../lib/sounds.h"
+#include <sounds.h>
 #include <SPIFFS.h>
 
 Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
