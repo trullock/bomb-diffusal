@@ -35,7 +35,7 @@ public:
 		this->updateTimeRemaining(30);
 	}
 
-	void updateTimeRemaining(unsigned int secs)
+	void updateTimeRemaining(uint16_t secs)
 	{
 		NeedySlave::updateTimeRemaining(secs);
 	}

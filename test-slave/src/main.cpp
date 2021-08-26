@@ -10,7 +10,6 @@ void setup()
 	slave = new TestSlave();
 }
 
-
 void loop()
 {
 	slave->loop();

@@ -27,7 +27,6 @@ class Slave {
 	volatile byte commandBuffer[12];
 	volatile byte commandBufferLength = 0;
 	
-	byte i2cAddress = 0;
 	unsigned int raiseInterruptPin;
 	bool interrupting;
 
@@ -39,7 +38,8 @@ protected:
 	byte strikes = 0;
 	byte state = STATE_DISARMED;
 	byte difficulty = 1;
-	byte timeRemainingInSecs = 0;
+	uint16_t timeRemainingInSecs = 0;
+	byte serialNumber[5];
 
 	/**
 	 * Handles commands from the master.
@@ -57,7 +57,12 @@ protected:
 	 * This is called by the master.
 	 * This exists instead of an internal timer as the master can arbitrarily decide the time remaining at any point
 	 */
-	virtual void updateTimeRemaining(unsigned int secs);
+	virtual void updateTimeRemaining(uint16_t secs);
+
+	/**
+	 * Sets the system's Serial Number
+	 */
+	void setSerialNumber(byte a, byte b, byte c, byte d, byte e);
 
 	/**
 	 * Sets this module's difficulty level.

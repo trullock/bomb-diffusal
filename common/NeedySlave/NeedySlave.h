@@ -6,12 +6,12 @@
 
 class NeedySlave : public Slave {
 
-	unsigned int activationThresholdInSecs[3] = { 15 * 60, 10 * 60, 5 * 60 };
-	unsigned int activationTimeInSecs = 0;
+	uint16_t activationThresholdInSecs[3] = { 15 * 60, 10 * 60, 5 * 60 };
+	uint16_t activationTimeInSecs = 0;
 
 protected:
 
-	void updateTimeRemaining(unsigned int secs) override;
+	void updateTimeRemaining(uint16_t secs) override;
 	virtual void activate();
 	void arm() override;
 public:

@@ -28,6 +28,9 @@
 		},
 		{
 			"path": "test-slave"
+		},
+		{
+			"path": "combolock"
 		}
 	],
 	"settings": {

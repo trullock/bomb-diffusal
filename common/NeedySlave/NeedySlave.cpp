@@ -10,9 +10,9 @@ void NeedySlave::arm()
 	this->state = STATE_SLEEPING;
 }
 
-void NeedySlave::updateTimeRemaining(unsigned int secs)
+void NeedySlave::updateTimeRemaining(uint16_t secs)
 {
-	byte activationThresholdInSecs = this->activationThresholdInSecs[this->difficulty];
+	uint16_t activationThresholdInSecs = this->activationThresholdInSecs[this->difficulty];
 	if(secs > activationThresholdInSecs)
 	{
 		// recalculate this every time to support the time remaining not decreasing sequentially (e.g. time pentaly strikes)

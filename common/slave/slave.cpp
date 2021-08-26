@@ -8,20 +8,20 @@ Slave::Slave(byte i2cAddress, uint8_t raiseInterruptPin)
 {
 	self = this;
 
-	this->i2cAddress = i2cAddress;
+	memset(this->serialNumber, 0, sizeof(this->serialNumber));
 
 	this->raiseInterruptPin = raiseInterruptPin;
 	this->interrupting = false;
 	pinMode(raiseInterruptPin, OUTPUT);
 
-	Wire.begin(this->i2cAddress);
+	Wire.begin(i2cAddress);
 	// enable broadcasts to be received
-	TWAR = (this->i2cAddress << 1) | 1;
+	TWAR = (i2cAddress << 1) | 1;
 	Wire.onRequest(Slave::reportStatusWrapper);
 	Wire.onReceive(Slave::receiveCommandWrapper);
 
 	Serial.print("Joining I2C bus with address: ");
-	Serial.println(this->i2cAddress);
+	Serial.println(i2cAddress);
 }
 
 void Slave::reportStatusWrapper()
@@ -54,7 +54,7 @@ void Slave::reportStatus()
 	this->sfxQueueLength = 0;
 }
 
-void Slave::updateTimeRemaining(unsigned int secs)
+void Slave::updateTimeRemaining(uint16_t secs)
 {
 	this->timeRemainingInSecs = secs;
 }
@@ -117,6 +117,15 @@ bool Slave::queueSfx(byte sound)
 	return true;
 }
 
+void Slave::setSerialNumber(byte a, byte b, byte c, byte d, byte e)
+{
+	this->serialNumber[0] = a;
+	this->serialNumber[1] = b;
+	this->serialNumber[2] = c;
+	this->serialNumber[3] = d;
+	this->serialNumber[4] = e;
+}
+
 void Slave::setDifficulty(byte diff)
 {
 	Serial.print("Setting difficulty to: ");
@@ -127,30 +136,14 @@ void Slave::setDifficulty(byte diff)
 
 void Slave::receiveCommand(int howMany)
 {
-	// Master scanning for modules will cause this
-	if(howMany == 0)
-		return;
-
 	if(commandBufferLength == 12)
 	{
 		// If this buffer is full we have real problems, probably a bug somewhere else.
 		return;
 	}
 
-	this->commandBuffer[this->commandBufferLength] = Wire.read();
-	this->commandBufferLength++;
-	
-	if (howMany == 2)
-		this->commandBuffer[this->commandBufferLength] = Wire.read();
-	else
-		this->commandBuffer[this->commandBufferLength] = 0;
-
-	if (howMany == 3)
-		this->commandBuffer[this->commandBufferLength] = Wire.read();
-	else
-		this->commandBuffer[this->commandBufferLength] = 0;
-
-	this->commandBufferLength++;
+	for(int i = 0; i < howMany; i++)
+		this->commandBuffer[this->commandBufferLength++] = Wire.read();
 }
 
 void Slave::handleCommand()
@@ -168,28 +161,43 @@ void Slave::handleCommand()
 	if (length == 0)
 		return;
 
-	for (byte i = 0; i < length; i += 3)
+	for (byte i = 0; i < length;)
 	{
 		byte command = buffer[i];
-		byte data1 = buffer[i + 1];
-		byte data2 = buffer[i + 2];
 
 		Serial.print("Received Command: ");
 		Serial.println(command);
 
 		if (command == COMMAND_DIFFICULTY)
-			this->setDifficulty(data1);
+		{
+			this->setDifficulty(buffer[i + 1]);
+			i += 2;
+		}
 		else if (command == COMMAND_ARM)
+		{
 			this->arm();
+			i++;
+		}
 		else if (command == COMMAND_STRIKE)
+		{
 			this->strike();
+			i++;
+		}
 		else if (command == COMMAND_EXPLODE)
+		{
 			this->explode();
+			i++;
+		}
 		else if (command == COMMAND_TIME)
 		{
-			// todo: check endianness;
-			unsigned int time = (data1 << 8) + data2;
+			uint16_t time = (buffer[i + 1] << 8) + buffer[i + 2];
 			this->updateTimeRemaining(time);
+			i+=3;
+		}
+		else if (command == COMMAND_SERIAL)
+		{
+			this->setSerialNumber(buffer[i + 1], buffer[i + 2], buffer[i + 3], buffer[i + 4], buffer[i + 5]);
+			i+=6;
 		}
 	}
 }

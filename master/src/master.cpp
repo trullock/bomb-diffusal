@@ -8,6 +8,7 @@
 #include "../lib/sounds.h"
 
 #define LOOP_INTERVAL_MS 100
+#define BROADCAST 0
 
 class Master
 {
@@ -19,30 +20,45 @@ class Master
 	
 	unsigned long lastLoopMillis = 0;
 	unsigned long lastSecondMillis = 0;
-	unsigned int timeRemainingInS = 0;
+	uint16_t timeRemainingInS = 0;
 
 	byte strikes = 0;
 	byte deactivatedModules = 0;
 
+	byte serialNumber[5];
+
 	Adafruit_SSD1306* display;
 	Sfx* sfx;
 
-	void sendCommand(byte command, byte arg)
+	byte sendCommand(int address, byte command, byte arg0 = 255, byte arg1 = 255, byte arg2 = 255, byte arg3 = 255, byte arg4 = 255, byte arg5 = 255, byte arg6 = 255, byte arg7 = 255)
 	{
-		if(this->moduleCount == 0)
-			return;
-			
-		
-		Wire.beginTransmission(0);
+		Wire.beginTransmission(address);
 		Wire.write(command);
-		if(arg != 0)
-			Wire.write(arg);
+
+		if(arg0 != 255)
+			Wire.write(arg0);
+		if(arg1 != 255)
+			Wire.write(arg1);
+		if(arg2 != 255)
+			Wire.write(arg2);
+		if(arg3 != 255)
+			Wire.write(arg3);
+		if(arg4 != 255)
+			Wire.write(arg4);
+		if(arg5 != 255)
+			Wire.write(arg5);
+		if(arg6 != 255)
+			Wire.write(arg6);
+		if(arg7 != 255)
+			Wire.write(arg7);
 
 		int error = Wire.endTransmission();
 		if (error != 0)
 		{
 			Serial.print("Error sending command: ");
 			Serial.print(command);
+			Serial.print(" to address: ");
+			Serial.print(address);
 			Serial.print(", Error: ");
 			Serial.println(error);
 
@@ -56,42 +72,8 @@ class Master
 				 * 5 .. timeout
 				*/
 		}
-	}
 
-	void sendCommand(byte command, unsigned int arg)
-	{
-		if(this->moduleCount == 0)
-			return;
-
-		Wire.beginTransmission(0);
-		Wire.write(command);
-		if(arg != 0)
-			Wire.write(arg);
-
-		int error = Wire.endTransmission();
-		if (error != 0)
-		{
-			Serial.print("Error sending command: ");
-			Serial.print(command);
-			Serial.print(", Error: ");
-			Serial.println(error);
-
-			
-			/** 
-				 * Errors
-				 * 0 .. success
-				 * 1 .. length too long for buffer
-				 * 2 .. address send, NACK received
-				 * 3 .. data send, NACK received
-				 * 4 .. other twi error (lost bus arbitration, bus error, ..)
-				 * 5 .. timeout
-				*/
-		}
-	}
-
-	void sendCommand(byte command)
-	{
-		sendCommand(command, (byte)0);
+		return error;
 	}
 
 	/**
@@ -136,6 +118,10 @@ class Master
 		if (now < lastSecondMillis + 1000)
 			return;
 
+
+		if (timeRemainingInS == 0)
+			return;
+
 		lastSecondMillis = now;
 
 		timeRemainingInS--;
@@ -153,18 +139,24 @@ class Master
 		if(secs == 0 && (mins % 10 == 0 || mins < 10))
 			this->sfx->selfDesctructionIn(mins);
 
-		// 10s remaining countdown
-		if(mins == 0 && secs == 10)
-			this->sfx->detonation10sCountdown();
-
-		sendCommand(COMMAND_TIME, timeRemainingInS);
+		if(mins == 0)
+		{
+			if(secs == 10)
+				this->sfx->detonation10sCountdown();
+			else if(secs == 0)
+				this->explode();
+		}
+		
+		byte arg0 = timeRemainingInS >> 8;
+		byte arg1 = timeRemainingInS;
+		sendCommand(BROADCAST, COMMAND_TIME, arg0, arg1);
 	}
 
 	void strike(byte strikes)
 	{
 		Serial.println("New strike");
 		this->strikes = strikes;
-		this->sendCommand(COMMAND_STRIKE);
+		this->sendCommand(BROADCAST, COMMAND_STRIKE);
 		// TODO, should this abort the current queue?
 		this->sfx->enqueue(Sounds::DeactivationFailure);
 	}
@@ -176,6 +168,20 @@ class Master
 		this->sfx->enqueue(Sounds::ComponentDeactivated);
 	}
 
+	void setSerialNumber()
+	{
+		// TODO: make sure A0 is floating
+		randomSeed(micros() + analogReadMilliVolts(A0));
+
+		for(byte i = 0; i < sizeof(this->serialNumber); i++)
+			this->serialNumber[i] = random(0, 36);
+	}
+
+	void explode()
+	{
+		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
+		// TODO: render explosion on master displays
+	}
 
 public:
 
@@ -185,6 +191,8 @@ public:
 
 		this->sfx = new Sfx(18, 19, 22);
 		this->sfx->enqueue(Sounds::SystemBootInitiated);
+
+		this->setSerialNumber();
 
 		this->display = new Adafruit_SSD1306(128, 64, &Wire);
 		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
@@ -201,7 +209,7 @@ public:
 	{
 		// TODO: should we support changing difficulty when armed?
 		difficulty = diff;
-		sendCommand(COMMAND_DIFFICULTY, difficulty);
+		sendCommand(BROADCAST, COMMAND_DIFFICULTY, difficulty);
 
 		if(difficulty == 0)
 			timeRemainingInS = 45 * 60;
@@ -214,7 +222,7 @@ public:
 	void arm()
 	{
 		this->armed = true;
-		this->sendCommand(COMMAND_ARM);
+		this->sendCommand(BROADCAST, COMMAND_ARM);
 
 		this->sfx->enqueue(Sounds::WeaponActivated);
 		
@@ -228,23 +236,11 @@ public:
 		byte error;
 		for (byte address = 1; address < 15; address++)
 		{
-			Wire.beginTransmission(address);
-			error = Wire.endTransmission();
-
+			error = this->sendCommand((int)address, COMMAND_SERIAL, this->serialNumber[0], this->serialNumber[1], this->serialNumber[2], this->serialNumber[3], this->serialNumber[4]);
 			if (error == 0)
 			{
-				// DONT uncomment these, it creates all kinds of wierd multi-threading looking issues which are unexplainable. Winner.
-
-				//Serial.print("	Module found at address 0x");
-				//if (address < 16)
-				//	Serial.print("0");
-				//Serial.println(address, HEX);
-
 				if(address == 0x3C)
-				{
-					//Serial.println("		Skipping");
 					continue;
-				}
 
 				moduleAddresses[moduleCount] = address;
 				moduleCount++;
@@ -261,6 +257,14 @@ public:
 		Serial.print("	Found ");
 		Serial.print(moduleCount);
 		Serial.println(" module(s)");
+
+		for(byte i = 0; i < moduleCount; i++)
+		{
+			Serial.print("	Module found at address 0x");
+			if (moduleAddresses[i] < 16)
+				Serial.print("0");
+			Serial.println(moduleAddresses[i], HEX);
+		}
 		Serial.println("	Finished");
 	}
 
