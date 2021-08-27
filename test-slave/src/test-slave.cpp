@@ -19,6 +19,15 @@ public:
 		
 	}
 
+	void updateTimeRemaining(uint16_t secs) override
+	{
+		Slave::updateTimeRemaining(secs);
+
+		Serial.print("Time remaining: ");
+		Serial.print(secs);
+		Serial.println("s");
+	}
+
 	void loop()
 	{
 		Slave::loop();

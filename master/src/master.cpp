@@ -9,13 +9,17 @@
 
 #define LOOP_INTERVAL_MS 100
 #define BROADCAST 0
+#define MASTER_STATE_BOOTING 1
+#define MASTER_STATE_ARMED 2
+#define MASTER_STATE_EXPLODED 3
+#define MASTER_STATE_DEACTIVATED 4
 
 class Master
 {
 	byte moduleAddresses[16];
 	byte moduleCount = 0;
 
-	bool armed = false;
+	byte state = 0;
 	byte difficulty = 1;
 	
 	unsigned long lastLoopMillis = 0;
@@ -112,6 +116,20 @@ class Master
 		return results;
 	}
 
+	void processModules(unsigned long now)
+	{
+		ModuleResults results = readModules();
+
+		if (results.strikes != this->strikes)
+			this->strike(results.strikes);
+
+		if (results.deactivatedModules != deactivatedModules)
+			this->moduleDeactivated(results.deactivatedModules);
+		
+		for(byte i = 0; i < results.soundCount; i++)
+			this->sfx->enqueue(results.sounds[i]);
+	}
+
 	void updateCountdown(unsigned long now)
 	{
 		// Run once a second
@@ -184,7 +202,7 @@ class Master
 	{
 		this->sfx->enqueue(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
 		this->sfx->enqueue(Sounds::PowerDown);
-		this->armed = false;
+		this->state = MASTER_STATE_DEACTIVATED;
 	}
 
 	void explode()
@@ -199,6 +217,8 @@ public:
 	Master()
 	{
 		Serial.println("Master booting");
+
+		this->state = MASTER_STATE_BOOTING;
 
 		this->sfx = new Sfx(18, 19, 22);
 		this->sfx->enqueue(Sounds::SystemBootInitiated);
@@ -232,7 +252,7 @@ public:
 
 	void arm()
 	{
-		this->armed = true;
+		this->state = MASTER_STATE_ARMED;
 		this->sendCommand(BROADCAST, COMMAND_ARM);
 
 		this->sfx->enqueue(Sounds::WeaponActivated);
@@ -279,28 +299,19 @@ public:
 		Serial.println("	Finished");
 	}
 
-	void processModules(unsigned long now)
+	void handleModuleInterrupt(unsigned long now)
 	{
-		ModuleResults results = readModules();
+		if(this->state != MASTER_STATE_ARMED)
+			return;
 
-		Serial.print("Module strikes: ");
-		Serial.println(results.strikes);
-
-		if (results.strikes != this->strikes)
-			this->strike(results.strikes);
-
-		if (results.deactivatedModules != deactivatedModules)
-			this->moduleDeactivated(results.deactivatedModules);
-		
-		for(byte i = 0; i < results.soundCount; i++)
-			this->sfx->enqueue(results.sounds[i]);
+		this->processModules(now);
 	}
 
 	void loop(unsigned long now)
 	{
 		this->sfx->loop();
 		
-		if(!this->armed)
+		if(this->state != MASTER_STATE_ARMED)
 			return;
 
 		this->updateCountdown(now);

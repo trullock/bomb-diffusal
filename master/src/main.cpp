@@ -9,8 +9,11 @@ Master* master;
 Button btnDifficulty0(7, INPUT_PULLUP);
 Button btnDifficulty1(8, INPUT_PULLUP);
 Button btnDifficulty2(9, INPUT_PULLUP);
+Button btnLidOpen(10, INPUT_PULLUP);
+
 volatile bool moduleInterruptRequest;
 bool booted = false;
+bool lidOpen = false;
 unsigned long lastMillis;
 
 void IRAM_ATTR moduleISR()
@@ -28,6 +31,7 @@ void setup()
 	attachInterrupt(23, moduleISR, RISING);
 
 	master = new Master();
+
 	lastMillis = millis();
 }
 
@@ -41,10 +45,12 @@ void loop()
 	// else if(btnDifficulty2.pressed())
 	// 	master->setDifficulty(2);
 
-	unsigned long now = millis();
+	// TODO: magnetic reed switch or other such mechanism
+	if(!lidOpen && true) // btnLidOpen.released())
+		lidOpen = true;
 
 	// wait some time for all modules to have booted + let the Booting sound play, as scanForModules is blocking and breaks the audio
-	if(!booted && now > 2500 + lastMillis)
+	if(!booted && lidOpen && millis() > 2500 + lastMillis)
 	{
 		booted = true;
 		master->scanForModules();
@@ -52,11 +58,11 @@ void loop()
 		master->arm();
 	}
 
-	if(moduleInterruptRequest)
+	if(booted && moduleInterruptRequest)
 	{
-		master->processModules(now);
+		master->handleModuleInterrupt(millis());
 		moduleInterruptRequest = false;
 	}
 
-	master->loop(now);
+	master->loop(millis());
 }
