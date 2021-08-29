@@ -21,7 +21,6 @@ void IRAM_ATTR moduleISR()
 	moduleInterruptRequest = true;
 }
 
-
 void setup()
 {
 	Wire.begin(4, 21);

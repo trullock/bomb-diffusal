@@ -62,7 +62,7 @@ protected:
 	/**
 	 * Sets the system's Serial Number
 	 */
-	void setSerialNumber(byte a, byte b, byte c, byte d, byte e);
+	virtual void setSerialNumber(byte a, byte b, byte c, byte d, byte e);
 
 	/**
 	 * Sets this module's difficulty level.

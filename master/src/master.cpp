@@ -22,12 +22,11 @@ class Master
 	byte state = 0;
 	byte difficulty = 1;
 	
-	unsigned long lastLoopMillis = 0;
 	unsigned long lastSecondMillis = 0;
 	uint16_t timeRemainingInS = 0;
 
-	byte strikes = 0;
-	byte deactivatedModules = 0;
+	byte totalStrikes = 0;
+	byte totalDeactivatedModules = 0;
 
 	byte serialNumber[5];
 
@@ -69,7 +68,7 @@ class Master
 			/** 
 				 * Errors
 				 * 0 .. success
-				 * 1 .. length to0 long for buffer
+				 * 1 .. length too long for buffer
 				 * 2 .. address send, NACK received
 				 * 3 .. data send, NACK received
 				 * 4 .. other twi error (lost bus arbitration, bus error, ..)
@@ -120,10 +119,10 @@ class Master
 	{
 		ModuleResults results = readModules();
 
-		if (results.strikes != this->strikes)
+		if (results.strikes != this->totalStrikes)
 			this->strike(results.strikes);
 
-		if (results.deactivatedModules != deactivatedModules)
+		if (results.deactivatedModules != totalDeactivatedModules)
 			this->moduleDeactivated(results.deactivatedModules);
 		
 		for(byte i = 0; i < results.soundCount; i++)
@@ -169,21 +168,20 @@ class Master
 		sendCommand(BROADCAST, COMMAND_TIME, arg0, arg1);
 	}
 
-	void strike(byte strikes)
+	void strike(byte totalStrikes)
 	{
 		Serial.println("New strike");
-		this->strikes = strikes;
+		this->totalStrikes = totalStrikes;
 		this->sendCommand(BROADCAST, COMMAND_STRIKE);
-		// TODO, should this abort the current queue?
-		this->sfx->enqueue(Sounds::DeactivationFailure);
+		this->sfx->enqueue(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT);
 	}
 
-	void moduleDeactivated(byte modules)
+	void moduleDeactivated(byte totalDeactivatedModules)
 	{
 		Serial.println("New module deactivated");
-		this->deactivatedModules = modules;
+		this->totalDeactivatedModules = totalDeactivatedModules;
 
-		if(this->deactivatedModules == this->moduleCount)
+		if(this->totalDeactivatedModules == this->moduleCount)
 			this->deactivate();
 		else
 			this->sfx->enqueue(Sounds::ComponentDeactivated);
@@ -270,18 +268,11 @@ public:
 			error = this->sendCommand((int)address, COMMAND_SERIAL, this->serialNumber[0], this->serialNumber[1], this->serialNumber[2], this->serialNumber[3], this->serialNumber[4]);
 			if (error == 0)
 			{
-				if(address == 0x3C)
-					continue;
+				// if(address == 0x3C)
+				// 	continue;
 
 				moduleAddresses[moduleCount] = address;
 				moduleCount++;
-			}
-			else if (error == 4)
-			{
-				Serial.print("	Unknown error at address 0x");
-				if (address < 16)
-					Serial.print("0");
-				Serial.println(address, HEX);
 			}
 		}
 
@@ -315,7 +306,5 @@ public:
 			return;
 
 		this->updateCountdown(now);
-
-		this->lastLoopMillis = now;
 	}
 };

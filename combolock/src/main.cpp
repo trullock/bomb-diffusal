@@ -1,17 +1,17 @@
 #include <Arduino.h>
-#include "morse.cpp"
+#include "combolock.h"
 #include <SPI.h>
 
-Morse* morse;
+Combolock* lock;
 
 void setup()
 {
 	Serial.begin(9600);
 	
-	morse = new Morse();
+	lock = new Combolock();
 }
 
 void loop()
 {
-	morse->loop();
+	lock->loop();
 }
