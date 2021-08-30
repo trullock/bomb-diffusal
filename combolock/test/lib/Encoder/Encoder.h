@@ -1,6 +1,8 @@
 #ifndef Encoder_h
 #define Encoder_h
 
+#include <stdint.h>
+
 	class Encoder
 	{
 		public:

@@ -44,7 +44,6 @@ void setCombination(byte (&combination)[5], byte (&serialNumber)[5])
 		}
 	}
 
-	// TODO: need to prevent neighbouring numbers from ever being the same as each other
 	combination[0] = integerSum;
 	combination[1] = consonantCount;
 	combination[2] = firstVowelIndex;

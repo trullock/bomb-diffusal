@@ -3,6 +3,7 @@
 #include <button.h>
 #include <LedControl.h>
 #include <serialnumber.h>
+#include <lock.h>
 
 #define DIRECTION_NONE 0
 #define DIRECTION_LEFT 1
@@ -35,7 +36,7 @@ class Combolock : public Slave {
 	{
 		Slave::setSerialNumber(a, b, c, d, e);
 
-		
+		setCombination(this->combination, this->serialNumber);
 	}
 
 	void arm()

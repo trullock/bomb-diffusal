@@ -108,8 +108,6 @@ protected:
 
 public:
 
-	Slave(byte i2cAddress);
-
 	/**
 	 * Creates a new slave on the given I2C address (1-254) using the given master-interrupt pin
 	 */

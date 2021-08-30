@@ -199,5 +199,10 @@ void Slave::handleCommand()
 			this->setSerialNumber(buffer[i + 1], buffer[i + 2], buffer[i + 3], buffer[i + 4], buffer[i + 5]);
 			i+=6;
 		}
+		else
+		{
+			// received something we dont understand
+			break;
+		}
 	}
 }

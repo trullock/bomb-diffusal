@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "combolock.h"
-#include <SPI.h>
 
 Combolock* lock;
 
@@ -15,3 +14,11 @@ void loop()
 {
 	lock->loop();
 }
+
+#ifdef UNIT_TEST
+
+int main(int argc, char **argv) {
+	return -1;
+}
+
+#endif
