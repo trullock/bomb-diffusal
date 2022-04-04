@@ -4,7 +4,7 @@
 
 Slave* Slave::self = nullptr;
 
-Slave::Slave(byte i2cAddress, uint8_t raiseInterruptPin)
+Slave::Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin)
 {
 	self = this;
 
@@ -65,6 +65,10 @@ void Slave::reportStrike()
 	// The master will query this and relay it back as a Strike() instruction
 	this->strikes++;
 	this->raiseMasterInterrupt();
+
+	#ifdef DEVMODE
+		this->strike();
+	#endif
 }
 
 void Slave::loop()

@@ -1,5 +1,7 @@
-#include <Slave.h>
+#ifndef NeedySlave_h
+#define NeedySlave_h
 
+#include <Slave.h>
 
 #define STATE_SLEEPING 1
 #define STATE_ACTIVE 2
@@ -16,5 +18,7 @@ protected:
 	void arm() override;
 public:
 
-	NeedySlave(int i2cAddress);
+	NeedySlave(uint8_t i2cAddress, uint8_t raiseInterruptPin);
 };
+
+#endif

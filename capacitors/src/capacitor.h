@@ -57,7 +57,6 @@ class Capacitor {
 		if (position != knobPosition)
 		{
 			knobPosition = position;
-
 			this->setChargeDelta(knobPosition == 0 ? -0.1 : knobPosition / 10.0);
 		}
 	}
@@ -127,8 +126,9 @@ public:
 		return this->chargeLevelInt == 0 || this->chargeLevelInt >= 124;
 	}
 	
-	void reset()
+	void reset(uint8_t difficulty)
 	{
+		this->difficulty = difficulty;
 		byte level = random(this->minStartChargeLevel[this->difficulty], 101);
 		this->setNewChargeLevel(level);
 		this->setChargeDelta(0);
@@ -154,7 +154,7 @@ public:
 		{
 			this->flashState = !this->flashState;
 			this->lastFlashMillis = now;
-
+			
 			this->updateDisplay();
 		}
 

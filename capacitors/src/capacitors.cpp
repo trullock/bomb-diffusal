@@ -1,5 +1,4 @@
 #include <NeedySlave.h>
-#include <Encoder.h>
 #include <Adafruit_SSD1306.h>
 #include "capacitor.h"
 
@@ -11,28 +10,34 @@ class Capacitors : public NeedySlave {
 	void arm() override
 	{
 		NeedySlave::arm();
-		cap1.reset();
-		//cap2.reset();
+		cap1.reset(this->difficulty);
+		//cap2.reset(this->difficulty);
 	}
 
 	void reportStrike()
 	{
 		NeedySlave::reportStrike();
-		cap1.reset();
-		//cap2.reset();
+		cap1.reset(this->difficulty);
+		//cap2.reset(this->difficulty);
 	}
 
 public:
 
 	Capacitors() :
-		NeedySlave(9)
-		, cap1(4, 5, 7, 8)
+		NeedySlave(9, 10)
+		, cap1(3, 2, 7, 8)
 		//,cap2(4, 5, 8, 9)
 	{
 		// development hacks
 		this->setDifficulty(2);
 		this->arm();
 		this->updateTimeRemaining(30);
+	}
+
+	void setDifficulty(byte diff)
+	{
+		NeedySlave::setDifficulty(diff);
+		this->cap1.reset(diff);
 	}
 
 	void updateTimeRemaining(uint16_t secs)
@@ -60,7 +65,7 @@ public:
 		if(this->cap1.chargeLevelOOB())
 		{
 			this->reportStrike();
-			this->cap1.reset();
+			this->cap1.reset(this->difficulty);
 		}
 
 		// if(this->cap2.chargeLevelOOB())

@@ -1,12 +1,14 @@
 #include <slave.h>
 #include <Encoder.h>
 #include "../lib/button.h"
-#include <LedControl.h>
+#include <TM1637Display.h>
 
 #define STATE_MORSING 1
 
 #define WordCount 5
 #define Morse_LED_Pin 5
+#define Disarmed_LED_PIN 13
+
 
 class Morse : public Slave {
 
@@ -104,7 +106,7 @@ class Morse : public Slave {
 	const int knobStep[3] = {10, 5, 1};
 
 	// Display
-	LedControl display;
+	TM1637Display display;
 
 	void setDifficulty(byte diff) override
 	{
@@ -136,10 +138,7 @@ class Morse : public Slave {
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
 		this->setLed(true);
 
-		display.setDigit(0, 0, 8, true);
-		display.setDigit(0, 1, 8, true);
-		display.setDigit(0, 2, 8, true);
-		display.setDigit(0, 3, 8, true);
+		display.showNumberDec(8888);
 	}
 
 	void explode() override
@@ -152,11 +151,12 @@ class Morse : public Slave {
 		Slave::deactivate();
 
 		setLed(false);
-		display.setIntensity(0, 1);
-		display.setChar(0, 0, '-', false);
-		display.setChar(0, 1, '-', false);
-		display.setChar(0, 2, '-', false);
-		display.setChar(0, 3, '-', false);
+
+		digitalWrite(Disarmed_LED_PIN, HIGH);
+
+		display.setBrightness(4);
+		const uint8_t dash[] = { SEG_G, SEG_G, SEG_G, SEG_G };
+		display.setSegments(dash);
 	}
 
 	void handleKnob()
@@ -174,6 +174,7 @@ class Morse : public Slave {
 	{
 		if (!this->btnEnter.pressed())
 			return;
+			
 
 		if (currentFrequency == correctFrequency)
 		{
@@ -186,15 +187,7 @@ class Morse : public Slave {
 
 	void updateDisplay()
 	{
-		int thousands = currentFrequency / 1000;
-		int hundreds = (currentFrequency - thousands * 1000) / 100;
-		int tens = (currentFrequency - thousands * 1000 - hundreds * 100) / 10;
-		int ones = currentFrequency % 10;
-
-		display.setDigit(0, 0, ones, false);
-		display.setDigit(0, 1, tens, false);
-		display.setDigit(0, 2, hundreds, false);
-		display.setDigit(0, 3, thousands, true);
+		display.showNumberDec(currentFrequency);
 	}
 
 	void setLed(bool on)
@@ -268,20 +261,23 @@ class Morse : public Slave {
 
 public:
 	Morse() : 
-		Slave(5), 
-		btnEnter(8, INPUT_PULLUP), 
-		knob(6, 7),
-		display(12, 11, 10, 1)
+		Slave(5, 11), 
+		btnEnter(6, INPUT_PULLUP), 
+		knob(7, 8),
+		display(4, 5)
 	{
 		pinMode(Morse_LED_Pin, OUTPUT);
 
-		this->display.shutdown(0, false);
-		this->display.setIntensity(0, 8);
-		this->display.clearDisplay(0);
+		pinMode(Disarmed_LED_PIN, OUTPUT);
+		digitalWrite(Disarmed_LED_PIN, LOW);
 
-		// dev mode hacks
-		this->setDifficulty(1);
-		this->arm();
+		this->display.setBrightness(7);
+		this->display.clear();
+
+		#ifdef DEVMODE
+			this->setDifficulty(1);
+			this->arm();
+		#endif
 	}
 
 	void loop()

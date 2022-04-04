@@ -1,3 +1,6 @@
+#ifndef Slave_h
+#define Slave_h
+
 #include <Arduino.h>
 #include <Wire.h>
 #include "../constants.h"
@@ -111,10 +114,13 @@ public:
 	/**
 	 * Creates a new slave on the given I2C address (1-254) using the given master-interrupt pin
 	 */
-	Slave(byte i2cAddress, uint8_t raiseInterruptPin);
+	Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin);
 
 	/**
 	 * Must be called regularly to enable this module to perform its duties
 	 */
 	virtual void loop();
 };
+
+
+#endif

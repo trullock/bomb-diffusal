@@ -40,7 +40,8 @@
 			"memory": "cpp",
 			"typeinfo": "cpp",
 			"xstring": "cpp",
-			"xtree": "cpp"
+			"xtree": "cpp",
+			"cstddef": "cpp"
 		}
 	}
 }
