@@ -6,28 +6,28 @@
 class Capacitors : public NeedySlave {
 
 	Capacitor cap1;
-	Capacitor cap2;
+	//Capacitor cap2;
 
 	void arm() override
 	{
 		NeedySlave::arm();
 		cap1.reset();
-		cap2.reset();
+		//cap2.reset();
 	}
 
 	void reportStrike()
 	{
 		NeedySlave::reportStrike();
 		cap1.reset();
-		cap2.reset();
+		//cap2.reset();
 	}
 
 public:
 
 	Capacitors() :
-		NeedySlave(9),
-		cap1(4, 5, 8, 9),
-		cap2(4, 5, 8, 9)
+		NeedySlave(9)
+		, cap1(4, 5, 7, 8)
+		//,cap2(4, 5, 8, 9)
 	{
 		// development hacks
 		this->setDifficulty(2);
@@ -44,7 +44,7 @@ public:
 	{
 		Serial.println("Activating");
 		this->cap1.activate();
-		this->cap2.activate();
+		//this->cap2.activate();
 	}
 
 	void loop()
@@ -55,7 +55,7 @@ public:
 			return;
 
 		this->cap1.loop();
-		this->cap2.loop();
+		//this->cap2.loop();
 
 		if(this->cap1.chargeLevelOOB())
 		{
@@ -63,10 +63,10 @@ public:
 			this->cap1.reset();
 		}
 
-		if(this->cap2.chargeLevelOOB())
-		{
-			this->reportStrike();
-			this->cap2.reset();
-		}
+		// if(this->cap2.chargeLevelOOB())
+		// {
+		// 	this->reportStrike();
+		// 	this->cap2.reset();
+		// }
 	}
 };
