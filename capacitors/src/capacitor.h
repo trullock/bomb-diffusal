@@ -1,5 +1,5 @@
 #include <NeedySlave.h>
-#include <Encoder.h>
+#include <RotaryEncoder.h>
 #include <Adafruit_SSD1306.h>
 
 class Capacitor {
@@ -23,7 +23,7 @@ class Capacitor {
 	bool flashState = false;
 	
 	//// Knob details
-	Encoder knob;
+	RotaryEncoder knob;
 	int knobPosition = 0;
 	int correctFrequency = 0;
 	int currentFrequency = 0;
@@ -53,7 +53,8 @@ class Capacitor {
 
 	void handleKnob()
 	{
-		int position = knob.read();
+		knob.tick();
+		int position = knob.getPosition();
 		if (position != knobPosition)
 		{
 			knobPosition = position;
@@ -73,7 +74,7 @@ class Capacitor {
 		Serial.println(newDelta);
 
 		this->setChargeDelta(newDelta);
-		knob.write(0);
+		knob.setPosition(0);
 	}
 
 	void setNewChargeLevel(float level)
@@ -106,7 +107,7 @@ class Capacitor {
 public:
 
 	Capacitor(uint8_t sda, uint8_t scl, uint8_t knobA, uint8_t knobB) : 
-		knob(knobA, knobB)
+		knob(knobA, knobB, RotaryEncoder::LatchMode::FOUR3)
 	{
 		this->displayWire = new SlowSoftWire(sda, scl, true);
 		//this->displayWire->setClock(400000);
@@ -115,7 +116,6 @@ public:
 		this->display = new Adafruit_SSD1306(128, 32, this->displayWire, -1);
 		if (!display->begin(SSD1306_SWITCHCAPVCC, 0x3C))
 			Serial.println(F("SSD1306 allocation failed"));
-		
 		
 		this->display->clearDisplay();
 		this->drawScale();

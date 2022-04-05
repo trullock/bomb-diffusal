@@ -141,7 +141,7 @@ class Morse : public Slave {
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
 		this->setLed(true);
 
-		display.showNumberDecEx(8888, 0b11100000);
+		display.showNumberDecEx(8888, 0b11110000);
 	}
 
 	void explode() override
@@ -171,7 +171,6 @@ class Morse : public Slave {
 			return false;
 
 		knobPosition = position;
-		Serial.println(knobPosition);
 		currentFrequency = startFreq[difficulty] + position * knobStep[difficulty];
 		return true;
 	}
