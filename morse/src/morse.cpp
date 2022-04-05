@@ -1,13 +1,15 @@
 #include <slave.h>
-#include <Encoder.h>
+#include <RotaryEncoder.h>
 #include "../lib/button.h"
 #include <TM1637Display.h>
 
 #define STATE_MORSING 1
 
 #define WordCount 5
+
+#define I2CAddress
 #define Morse_LED_Pin 5
-#define Disarmed_LED_PIN 13
+#define Disarmed_LED_Pin 13
 
 
 class Morse : public Slave {
@@ -99,8 +101,8 @@ class Morse : public Slave {
 	Button btnEnter;
 
 	//// Knob details
-	Encoder knob;
-	int knobPosition = 0;
+	RotaryEncoder knob;
+	int16_t knobPosition = 0;
 	int correctFrequency = 0;
 	int currentFrequency = 0;
 	const int knobStep[3] = {10, 5, 1};
@@ -130,6 +132,7 @@ class Morse : public Slave {
 		Slave::arm();
 
 		this->state = STATE_MORSING;
+		this->updateDisplay();
 	}
 
 	void strike() override {
@@ -138,7 +141,7 @@ class Morse : public Slave {
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
 		this->setLed(true);
 
-		display.showNumberDec(8888);
+		display.showNumberDecEx(8888, 0b11100000);
 	}
 
 	void explode() override
@@ -152,29 +155,31 @@ class Morse : public Slave {
 
 		setLed(false);
 
-		digitalWrite(Disarmed_LED_PIN, HIGH);
+		digitalWrite(Disarmed_LED_Pin, HIGH);
 
 		display.setBrightness(4);
 		const uint8_t dash[] = { SEG_G, SEG_G, SEG_G, SEG_G };
 		display.setSegments(dash);
 	}
 
-	void handleKnob()
+	bool handleKnob()
 	{
-		int position = knob.read();
-		if (position != knobPosition)
-		{
-			knobPosition = position;
+		knob.tick();
+		int16_t position = knob.getPosition();
+		
+		if (position == knobPosition)
+			return false;
 
-			currentFrequency = startFreq[difficulty] + position * knobStep[difficulty];
-		}
+		knobPosition = position;
+		Serial.println(knobPosition);
+		currentFrequency = startFreq[difficulty] + position * knobStep[difficulty];
+		return true;
 	}
 
 	void handleButton()
 	{
 		if (!this->btnEnter.pressed())
 			return;
-			
 
 		if (currentFrequency == correctFrequency)
 		{
@@ -187,7 +192,8 @@ class Morse : public Slave {
 
 	void updateDisplay()
 	{
-		display.showNumberDec(currentFrequency);
+													// decimal place in 3rd position
+		display.showNumberDecEx(currentFrequency, 0b00100000);
 	}
 
 	void setLed(bool on)
@@ -257,19 +263,20 @@ class Morse : public Slave {
 		this->currentMorseChar = "";
 		this->currentCharIndex = -1;
 		this->nextMillis = millis() + this->loopDelay[this->difficulty];
+		this->updateDisplay();
 	}
 
 public:
 	Morse() : 
 		Slave(5, 11), 
 		btnEnter(6, INPUT_PULLUP), 
-		knob(7, 8),
+		knob(2, 3, RotaryEncoder::LatchMode::FOUR3),
 		display(4, 5)
 	{
 		pinMode(Morse_LED_Pin, OUTPUT);
 
-		pinMode(Disarmed_LED_PIN, OUTPUT);
-		digitalWrite(Disarmed_LED_PIN, LOW);
+		pinMode(Disarmed_LED_Pin, OUTPUT);
+		digitalWrite(Disarmed_LED_Pin, LOW);
 
 		this->display.setBrightness(7);
 		this->display.clear();
@@ -287,10 +294,11 @@ public:
 		if(this->state == STATE_MORSING)
 		{
 			this->updateLed();
-			this->updateDisplay();
 
 			this->handleButton();
-			this->handleKnob();
+
+			if(this->handleKnob())
+				this->updateDisplay();
 		}
 		else if(this->state == STATE_STRIKING)
 		{

@@ -25,7 +25,7 @@ public:
 
 	Capacitors() :
 		NeedySlave(9, 10)
-		, cap1(3, 2, 7, 8)
+		, cap1(8, 9, 2, 3)
 		//,cap2(4, 5, 8, 9)
 	{
 		// development hacks
