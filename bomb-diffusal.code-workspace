@@ -42,6 +42,24 @@
 			"xstring": "cpp",
 			"xtree": "cpp",
 			"cstddef": "cpp"
+			"algorithm": "cpp",
+			"charconv": "cpp",
+			"format": "cpp",
+			"fstream": "cpp",
+			"functional": "cpp",
+			"ios": "cpp",
+			"istream": "cpp",
+			"iterator": "cpp",
+			"ostream": "cpp",
+			"sstream": "cpp",
+			"streambuf": "cpp",
+			"string": "cpp",
+			"vector": "cpp",
+			"xlocale": "cpp",
+			"xlocbuf": "cpp",
+			"xlocnum": "cpp",
+			"xloctime": "cpp",
+			"*.tcc": "cpp"
 		}
 	}
 }

@@ -5,15 +5,17 @@
 
 	class Encoder
 	{
-		public:
-		Encoder(uint8_t pinA, uint8_t pinB)
-		{
-		}
+		int32_t position;
 
-		int32_t read()
-		{
-			return 0;
-		}
+		public:
+
+		static Encoder* Encoder0;
+
+		Encoder(uint8_t pinA, uint8_t pinB);
+
+		int32_t read();
+
+		void write(int32_t pos);
 	};
 
 #endif

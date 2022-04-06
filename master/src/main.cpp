@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SD.h>
-#include "master.cpp"
+#include "master.h"
 
 #include "../lib/button.h"
 
@@ -9,7 +9,7 @@ Master* master;
 Button btnDifficulty0(7, INPUT_PULLUP);
 Button btnDifficulty1(8, INPUT_PULLUP);
 Button btnDifficulty2(9, INPUT_PULLUP);
-Button btnLidOpen(10, INPUT_PULLUP);
+Button btnLidOpen(15, INPUT_PULLUP);
 
 volatile bool moduleInterruptRequest;
 bool booted = false;
@@ -44,20 +44,23 @@ void loop()
 	// else if(btnDifficulty2.pressed())
 	// 	master->setDifficulty(2);
 
-	// TODO: magnetic reed switch or other such mechanism
-	if(!lidOpen && true) // btnLidOpen.released())
-		lidOpen = true;
+	uint8_t difficulty = 1;
 
-	// wait some time for all modules to have booted + let the Booting sound play, as scanForModules is blocking and breaks the audio
-	if(!booted && lidOpen && millis() > 2500 + lastMillis)
+	if(!lidOpen && btnLidOpen.released())
 	{
-		booted = true;
-		master->scanForModules();
-		master->setDifficulty(1);
-		master->arm();
+		lidOpen = true;
+		if(booted)
+			master->ready(difficulty);
 	}
 
-	if(booted && moduleInterruptRequest)
+	// wait some time for all modules to have booted + let the Booting sound play, as scanForModules is blocking and breaks the audio
+	if(!booted && millis() > 2500 + lastMillis)
+	{
+		booted = true;
+		master->boot(lidOpen, difficulty);
+	}
+
+	if(booted && lidOpen && moduleInterruptRequest)
 	{
 		master->handleModuleInterrupt(millis());
 		moduleInterruptRequest = false;

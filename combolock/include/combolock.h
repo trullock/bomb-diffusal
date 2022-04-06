@@ -5,6 +5,9 @@
 #include <serialnumber.h>
 #include <lock.h>
 
+#ifndef Combolock_h
+#define Combolock_h
+
 #define DIRECTION_NONE 0
 #define DIRECTION_LEFT 1
 #define DIRECTION_RIGHT 2
@@ -82,6 +85,8 @@ class Combolock : public Slave {
 		int32_t position = knob.read();
 		if (position != knobPosition)
 		{
+			// TODO: handle overflow loops?
+			
 			uint8_t direction = position < knobPosition ? DIRECTION_LEFT : DIRECTION_RIGHT;
 			knobPosition = position;
 			lockPosition += position;
@@ -183,3 +188,5 @@ public:
 		}
 	}
 };
+
+#endif

@@ -110,7 +110,7 @@ void Sfx::selfDesctructionIn(byte mins)
 {
 	Serial.print("Playing: Self destruction in ");
 	Serial.print(mins);
-	Serial.println("mins(s)");
+	Serial.println(" mins(s)");
 
 	this->enqueue(Sounds::SelfDestructionIn);
 	
@@ -130,7 +130,7 @@ void Sfx::selfDesctructionIn(byte mins)
 	if(ones > 0)
 	{
 		sound = 100 + ones;
-		this->enqueue(ones);
+		this->enqueue(sound);
 	}
 
 	this->enqueue(mins == 1 ? Sounds::Minute : Sounds::Minutes);

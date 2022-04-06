@@ -17,39 +17,48 @@ void Wire_::onRequest( void (*function)(void) ) {
 }
 
 uint8_t Wire_::read(){
-	if(bufferLength > 0)
+	if(readBufferLength > 0)
 	{
-		if(readIndex > bufferLength - 1)
+		if(readBufferReadIndex > readBufferLength - 1)
 			return 255;
 
-		return buffer[readIndex++];
+		return readBuffer[readBufferReadIndex++];
 	}
 
 	return 255;
 }
 
 void Wire_::write(uint8_t b) { 
-
+	writeBuffer[writeBufferLength++] = b;
 }
 
-void Wire_::test_Receive(uint8_t arg0, uint8_t arg1, uint8_t arg2, uint8_t arg3, uint8_t arg4)
+void Wire_::test_Request()
 {
-	memset(buffer, 0, sizeof(buffer));
+	user_onRequest();
+}
 
-	bufferLength = 0;
-	buffer[bufferLength++] = arg0;
+void Wire_::test_Receive(uint8_t arg0, uint8_t arg1, uint8_t arg2, uint8_t arg3, uint8_t arg4, uint8_t arg5)
+{
+	memset(readBuffer, 0, sizeof(readBuffer));
+
+	readBufferLength = 0;
+	readBuffer[readBufferLength++] = arg0;
 	if(arg1 != 255)
-		buffer[bufferLength++] = arg1;
+		readBuffer[readBufferLength++] = arg1;
 	if(arg2 != 255)
-		buffer[bufferLength++] = arg2;
+		readBuffer[readBufferLength++] = arg2;
 	if(arg3 != 255)
-		buffer[bufferLength++] = arg3;
+		readBuffer[readBufferLength++] = arg3;
 	if(arg4 != 255)
-		buffer[bufferLength++] = arg4;
+		readBuffer[readBufferLength++] = arg4;
+	if(arg5 != 255)
+		readBuffer[readBufferLength++] = arg5;
 
-	readIndex = 0;
+	readBufferReadIndex = 0;
 	
-	user_onReceive(bufferLength);
+	user_onReceive(readBufferLength);
+
+	// TODO: reset here?
 }
 
 Wire_ Wire;

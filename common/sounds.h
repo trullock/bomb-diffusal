@@ -23,6 +23,7 @@ enum Sounds : byte {
 	SystemBootInitiated = 12,
 	WeaponActivated = 13,
 	WeaponDeactivated = 14,
+	WeaponReady = 15,
 	Number1 = 101,
 	Number10 = 110,
 	Number2 = 102,

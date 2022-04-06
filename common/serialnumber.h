@@ -14,4 +14,13 @@ char serialCharToAscii(uint8_t value)
 	return 0;
 }
 
+
+void generateSerialNumber(byte (&serialNumber)[5])
+{
+	// TODO: ensure we generate a S/N which the combinations module can turn into useful combinations
+	for(byte i = 0; i < sizeof(serialNumber); i++)
+		serialNumber[i] = random(0, 36);
+}
+
+
 #endif

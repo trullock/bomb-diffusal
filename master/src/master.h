@@ -6,6 +6,7 @@
 #include "module-results.h"
 #include "sfx.h"
 #include <sounds.h>
+#include <serialnumber.h>
 
 #define LOOP_INTERVAL_MS 100
 #define BROADCAST 0
@@ -79,9 +80,6 @@ class Master
 		return error;
 	}
 
-	/**
-	 * Read the current status of all known modules
-	 */
 	ModuleResults readModules()
 	{
 		ModuleResults results;
@@ -187,15 +185,6 @@ class Master
 			this->sfx->enqueue(Sounds::ComponentDeactivated);
 	}
 
-	void setSerialNumber()
-	{
-		// TODO: make sure A0 is floating
-		randomSeed(micros() + analogReadMilliVolts(A0));
-
-		for(byte i = 0; i < sizeof(this->serialNumber); i++)
-			this->serialNumber[i] = random(0, 36);
-	}
-
 	void deactivate()
 	{
 		this->sfx->enqueue(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
@@ -210,58 +199,10 @@ class Master
 		// TODO: render explosion on master displays
 	}
 
-public:
-
-	Master()
-	{
-		Serial.println("Master booting");
-
-		this->state = MASTER_STATE_BOOTING;
-
-		this->sfx = new Sfx(18, 19, 22);
-		this->sfx->enqueue(Sounds::SystemBootInitiated);
-
-		this->setSerialNumber();
-
-		this->display = new Adafruit_SSD1306(128, 64, &Wire);
-		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
-			Serial.println(F("SSD1306 allocation failed"));
-		
-		this->display->clearDisplay();
-		this->display->display();
-
-		this->display->setTextSize(2);
-		this->display->setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-	}
-
-	void setDifficulty(byte diff)
-	{
-		// TODO: should we support changing difficulty when armed?
-		difficulty = diff;
-		sendCommand(BROADCAST, COMMAND_DIFFICULTY, difficulty);
-
-		if(difficulty == 0)
-			timeRemainingInS = 45 * 60;
-		else if (difficulty == 1)
-			timeRemainingInS = 30;//30 * 60;
-		else if (difficulty == 2)
-			timeRemainingInS = 20 * 60;
-	}
-
-	void arm()
-	{
-		this->state = MASTER_STATE_ARMED;
-		this->sendCommand(BROADCAST, COMMAND_ARM);
-
-		this->sfx->enqueue(Sounds::WeaponActivated);
-		
-		byte mins = this->timeRemainingInS / 60;
-		this->sfx->selfDesctructionIn(mins);
-	}
-
 	void scanForModules()
 	{
 		Serial.println("Scanning for modules...");
+		
 		byte error;
 		for (byte address = 1; address < 15; address++)
 		{
@@ -290,6 +231,74 @@ public:
 		Serial.println("	Finished");
 	}
 
+	void setDifficulty(byte diff)
+	{
+		// TODO: should we support changing difficulty when armed?
+		difficulty = diff;
+		sendCommand(BROADCAST, COMMAND_DIFFICULTY, difficulty);
+
+		if(difficulty == 0)
+			timeRemainingInS = 45 * 60;
+		else if (difficulty == 1)
+			timeRemainingInS = 60;//30 * 60;
+		else if (difficulty == 2)
+			timeRemainingInS = 20 * 60;
+	}
+
+public:
+
+	Master()
+	{
+		Serial.println("Master booting");
+
+		this->state = MASTER_STATE_BOOTING;
+
+		this->sfx = new Sfx(18, 19, 22);
+		this->sfx->enqueue(Sounds::SystemBootInitiated);
+
+		// TODO: is this random enough?
+		randomSeed(micros() + analogRead(0));
+
+		generateSerialNumber(this->serialNumber);
+
+		this->display = new Adafruit_SSD1306(128, 64, &Wire);
+		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
+			Serial.println(F("SSD1306 allocation failed"));
+		
+		this->display->clearDisplay();
+		this->display->display();
+
+		this->display->setTextSize(2);
+		this->display->setTextColor(SSD1306_WHITE, SSD1306_BLACK);
+	}
+
+	void arm()
+	{
+		this->state = MASTER_STATE_ARMED;
+		this->sendCommand(BROADCAST, COMMAND_ARM);
+
+		this->sfx->enqueue(Sounds::WeaponActivated);
+		
+		byte mins = this->timeRemainingInS / 60;
+		this->sfx->selfDesctructionIn(mins);
+	}
+
+	void boot(bool ready, uint8_t difficulty)
+	{
+		this->scanForModules();
+
+		if(ready)
+			this->ready(difficulty);
+		else
+			this->sfx->enqueue(Sounds::WeaponReady);
+	}
+
+	void ready(uint8_t difficulty)
+	{
+		this->setDifficulty(difficulty);
+		this->arm();
+	}
+
 	void handleModuleInterrupt(unsigned long now)
 	{
 		if(this->state != MASTER_STATE_ARMED)
@@ -307,4 +316,5 @@ public:
 
 		this->updateCountdown(now);
 	}
+
 };

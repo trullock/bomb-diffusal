@@ -51,6 +51,8 @@ public:
 
 		pinMode(pin, mode);
 		this->updateState();
+		// ensure released() works when a button is in the released state when this class is first instantiated
+		this->read = false;
 	}
 
 	/**
@@ -71,7 +73,7 @@ public:
 	/**
 	 * Determines if the button has been released after being pressed.
 	 * Calling this method will only return `true` once for each release.
-	 * This will not return true if the button is released when this class was instantiated
+	 * This will return true if the button is released when this class was instantiated
 	 */
 	bool released() {
 		this->updateState();
