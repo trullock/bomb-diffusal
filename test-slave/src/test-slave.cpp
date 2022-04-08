@@ -11,7 +11,7 @@ public:
 	Button btnNotify;
 
 	TestSlave() :
-		Slave(1, 2),
+		Slave(1, 12),
 		btnStrike(8, INPUT_PULLUP),
 		btnDeactivate(9, INPUT_PULLUP),
 		btnNotify(10, INPUT_PULLUP)

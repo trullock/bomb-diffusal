@@ -5,6 +5,14 @@
 			"path": "common"
 		},
 		{
+			"name": "combolock",
+			"path": "combolock"
+		},
+		{
+			"name": "caeser",
+			"path": "caeser"
+		},
+		{
 			"name": "master",
 			"path": "master"
 		},
@@ -21,16 +29,16 @@
 			"path": "maze"
 		},
 		{
+			"name": "knob",
 			"path": "knob"
 		},
 		{
+			"name": "capacitors",
 			"path": "capacitors"
 		},
 		{
+			"name": "test-slave",
 			"path": "test-slave"
-		},
-		{
-			"path": "combolock"
 		}
 	],
 	"settings": {
@@ -60,6 +68,9 @@
 			"xlocnum": "cpp",
 			"xloctime": "cpp",
 			"*.tcc": "cpp"
+			"cstddef": "cpp",
+			"initializer_list": "cpp",
+			"xutility": "cpp"
 		}
 	}
 }

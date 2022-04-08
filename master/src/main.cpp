@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SD.h>
 #include "master.h"
 
 #include "../lib/button.h"

@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <Wire.h>
+
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_LEDBackpack.h>
 
 #include "../lib/constants.h"
 #include "module-results.h"
@@ -32,6 +35,7 @@ class Master
 	byte serialNumber[5];
 
 	Adafruit_SSD1306* display;
+	Adafruit_AlphaNum4* alpha4;
 	Sfx* sfx;
 
 	byte sendCommand(int address, byte command, byte arg0 = 255, byte arg1 = 255, byte arg2 = 255, byte arg3 = 255, byte arg4 = 255, byte arg5 = 255, byte arg6 = 255, byte arg7 = 255)
@@ -117,6 +121,12 @@ class Master
 	{
 		ModuleResults results = readModules();
 
+		Serial.println("Reading modules");
+		Serial.print("	Strikes: ");
+		Serial.println(results.strikes);
+		Serial.print("	Deactivations: ");
+		Serial.println(results.deactivatedModules);
+
 		if (results.strikes != this->totalStrikes)
 			this->strike(results.strikes);
 
@@ -170,6 +180,12 @@ class Master
 	{
 		Serial.println("New strike");
 		this->totalStrikes = totalStrikes;
+		
+		// https://learn.adafruit.com/adafruit-led-backpack/0-54-alphanumeric-9b21a470-83ad-459c-af02-209d8d82c462
+		this->alpha4->writeDigitRaw(3, 0b0011111111000000);
+		this->alpha4->writeDigitRaw(0, 0xFFFF);
+		this->alpha4->writeDisplay();
+
 		this->sendCommand(BROADCAST, COMMAND_STRIKE);
 		this->sfx->enqueue(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT);
 	}
@@ -261,6 +277,7 @@ public:
 
 		generateSerialNumber(this->serialNumber);
 
+		
 		this->display = new Adafruit_SSD1306(128, 64, &Wire);
 		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
 			Serial.println(F("SSD1306 allocation failed"));
@@ -270,6 +287,9 @@ public:
 
 		this->display->setTextSize(2);
 		this->display->setTextColor(SSD1306_WHITE, SSD1306_BLACK);
+
+		this->alpha4 = new Adafruit_AlphaNum4();
+		this->alpha4->begin(0x70);
 	}
 
 	void arm()

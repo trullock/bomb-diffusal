@@ -39,8 +39,8 @@ class Capacitor {
 		this->display->setCursor(0, 0);
 		this->display->println(F("0  20  50  80 100 120"));
 
-		this->display->setCursor(32, 32 - 8);
-		this->display->println(F("CAPACITOR 1"));
+		this->display->setCursor(0, 32 - 8);
+		this->display->println(F("    CAPACITOR CHARGE"));
 
 		this->display->display();
 	}

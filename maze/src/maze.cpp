@@ -1,5 +1,5 @@
 #include <slave.h>
-#include "../lib/button.h"
+#include "../lib/joystick.h"
 #include <MD_MAX72xx.h>
 
 #define STATE_CLUE 1
@@ -11,10 +11,7 @@ class Maze : public Slave {
 	// https://majicdesigns.github.io/MD_MAX72XX/class_m_d___m_a_x72_x_x.html
 	MD_MAX72XX* display;
 
-	Button* btnNorth;
-	Button* btnEast;
-	Button* btnSouth;
-	Button* btnWest;
+	Joystick *joystick;
 
 	/// Pulsing
 	
@@ -112,46 +109,50 @@ class Maze : public Slave {
 
 	void handleStartNavigating()
 	{
-		if(this->btnNorth->pressed() || this->btnEast->pressed() || this->btnSouth->pressed() || this->btnWest->pressed())
+		this->joystick->updateState();
+
+		if(this->joystick->direction() != JOYSTICK_NONE)
 			this->state = STATE_NAVIGATING;
 	}
 
 	void handleMovement()
 	{
 		int newY = 0, newX = 0, mazeY = 0, mazeX = 0;
+		
+		this->joystick->updateState();
+		uint8_t dir = this->joystick->direction();
 
-		if (this->btnNorth->pressed())
+		if ((dir & JOYSTICK_NORTH) != 0)
 		{
 			mazeY = this->posY - 1;
 			mazeX = this->posX;
 			newY = this->posY - 2;
 			newX = this->posX;
 		}
-		else if (this->btnEast->pressed())
+		if ((dir & JOYSTICK_EAST) != 0)
 		{
 			mazeY = this->posY;
 			mazeX = this->posX + 1;
 			newY = this->posY;
 			newX = this->posX + 2;
 		}
-		else if (this->btnSouth->pressed())
+		if ((dir & JOYSTICK_SOUTH) != 0)
 		{
 			mazeY = this->posY + 1;
 			mazeX = this->posX;
 			newY = this->posY + 2;
 			newX = this->posX;
 		}
-		else if (this->btnWest->pressed())
+		if ((dir & JOYSTICK_WEST) != 0)
 		{
 			mazeY = this->posY;
 			mazeX = this->posX - 1;
 			newY = this->posY;
 			newX = this->posX - 2;
 		}
-		else
-		{
+
+		if(dir == JOYSTICK_NONE)
 			return;
-		}
 
 		if (mazeY < 0 || mazeY >= rows || mazeX < 0 || mazeX >= cols)
 		{
@@ -205,19 +206,21 @@ class Maze : public Slave {
 	}
 
 public:
-	Maze() : Slave(7)
+	Maze() : Slave(7, 8)
 	{
 		this->display = new MD_MAX72XX(MD_MAX72XX::FC16_HW, 3, 4);
 
-		this->btnNorth = new Button(1, INPUT);
-		this->btnEast = new Button(2, INPUT);
-		this->btnSouth = new Button(3, INPUT);
-		this->btnWest = new Button(4, INPUT);
+		this->joystick = new Joystick(A1, A2, A3);
 
 		this->display->begin();
 		this->display->control(MD_MAX72XX::controlRequest_t::INTENSITY, 15);
 		this->display->clear();
 		this->display->update();
+
+		#ifdef DEVMODE
+			this->setDifficulty(1);
+			this->arm();
+		#endif
 	}
 
 	void loop()
