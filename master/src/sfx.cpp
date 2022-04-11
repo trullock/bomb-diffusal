@@ -7,8 +7,9 @@ Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
 	this->out = new AudioOutputI2S();
 	out->SetChannels(1);
 	out->SetOutputModeMono(true);
-	out->SetGain(0.1);
+	out->SetGain(0.5);
 	out->SetPinout(bclk, lrc, dout);
+	
 	this->mp3 = new AudioGeneratorMP3();
 
 	memset(this->queue, 0, sizeof(this->queue));

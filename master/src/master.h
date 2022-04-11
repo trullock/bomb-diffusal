@@ -5,6 +5,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_LEDBackpack.h>
 
+#include <TM1637Display.h>
+
 #include "../lib/constants.h"
 #include "module-results.h"
 #include "sfx.h"
@@ -37,6 +39,11 @@ class Master
 
 	Adafruit_SSD1306* display;
 	Adafruit_AlphaNum4* livesDisplay;
+	TM1637Display* timeDisplay;
+
+	unsigned long activateCountdownAtMillis = 0;
+	bool countdownActive = false;
+
 	Sfx* sfx;
 
 	byte sendCommand(int address, byte command, byte arg0 = 255, byte arg1 = 255, byte arg2 = 255, byte arg3 = 255, byte arg4 = 255, byte arg5 = 255, byte arg6 = 255, byte arg7 = 255)
@@ -140,6 +147,14 @@ class Master
 
 	void updateCountdown(unsigned long now)
 	{
+		if(!this->countdownActive)
+		{
+			if(this->activateCountdownAtMillis <= now)
+				this->countdownActive = true;
+			else
+				return;
+		}
+
 		// Run once a second
 		if (now < lastSecondMillis + 1000)
 			return;
@@ -154,19 +169,17 @@ class Master
 		byte mins = timeRemainingInS / 60;
 		byte secs = timeRemainingInS % 60;
 
-		this->display->setCursor(0, 0);
-		this->display->print(mins);
-		this->display->print(":");
-		this->display->print(secs);
-		this->display->display();
-
+		int timeAsDec = mins * 100 + secs;
+		this->timeDisplay->showNumberDecEx(timeAsDec, 0b01000000, true);
+		
 		// only announce whole mins, 10,20,30,etc and 1,2,3,4,5,6,7,8,9
 		if(secs == 0 && mins > 0 && (mins % 10 == 0 || mins < 10))
 			this->sfx->selfDesctructionIn(mins);
 
 		if(mins == 0)
 		{
-			if(secs == 10)
+			// start at 12 as it takes ~2s to say "detonation in...", making the "10" land ~at 10s
+			if(secs == 12)
 				this->sfx->detonation10sCountdown();
 			else if(secs == 0)
 				this->explode();
@@ -216,7 +229,7 @@ class Master
 		this->sfx->enqueue(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT);
 
 		if(this->livesRemaining == 0)
-			this->timeRemainingInS = 11; // one more than 10s countdown, so next tick we're at 10
+			this->explode();
 	}
 
 	void moduleDeactivated(byte totalDeactivatedModules)
@@ -232,8 +245,9 @@ class Master
 
 	void deactivate()
 	{
-		this->livesDisplay->clear();
-		this->livesDisplay->writeDisplay();
+		this-> countdownActive = false;
+		//this->livesDisplay->clear();
+		//this->livesDisplay->writeDisplay();
 
 		this->sfx->enqueue(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
 		this->sfx->enqueue(Sounds::PowerDown);
@@ -244,6 +258,8 @@ class Master
 	{
 		this->livesDisplay->clear();
 		this->livesDisplay->writeDisplay();
+
+		this->timeDisplay->clear();
 
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
 		this->sfx->enqueue(Sounds::Explosion);
@@ -334,6 +350,10 @@ public:
 
 		this->livesDisplay = new Adafruit_AlphaNum4();
 		this->livesDisplay->begin(0x70);
+		
+		this->timeDisplay = new TM1637Display(33, 25);
+		this->timeDisplay->setBrightness(7);
+		this->timeDisplay->clear();
 	}
 
 	void arm()
@@ -347,6 +367,9 @@ public:
 		
 		byte mins = this->timeRemainingInS / 60;
 		this->sfx->selfDesctructionIn(mins);
+
+		// 6s is the approx time the selfDesctruction sfx takes to play
+		this->activateCountdownAtMillis = millis() + 6000;
 	}
 
 	void boot(bool ready, uint8_t difficulty)
