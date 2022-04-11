@@ -30,12 +30,13 @@ class Master
 	uint16_t timeRemainingInS = 0;
 
 	byte totalStrikes = 0;
+	byte livesRemaining = 0;
 	byte totalDeactivatedModules = 0;
 
 	byte serialNumber[5];
 
 	Adafruit_SSD1306* display;
-	Adafruit_AlphaNum4* alpha4;
+	Adafruit_AlphaNum4* livesDisplay;
 	Sfx* sfx;
 
 	byte sendCommand(int address, byte command, byte arg0 = 255, byte arg1 = 255, byte arg2 = 255, byte arg3 = 255, byte arg4 = 255, byte arg5 = 255, byte arg6 = 255, byte arg7 = 255)
@@ -176,18 +177,46 @@ class Master
 		sendCommand(BROADCAST, COMMAND_TIME, arg0, arg1);
 	}
 
+	void updateLivesDisplay()
+	{
+		#define LEDSEG_LIFE 0b0011111111111111
+		#define LEDSEG_NOLIFE 0b0000000000111111
+
+		this->livesDisplay->writeDigitRaw(0, LEDSEG_NOLIFE);
+		this->livesDisplay->writeDigitRaw(1, LEDSEG_NOLIFE);
+		this->livesDisplay->writeDigitRaw(2, LEDSEG_NOLIFE);
+		this->livesDisplay->writeDigitRaw(3, LEDSEG_NOLIFE);
+
+		if(this->livesRemaining == 4)
+			this->livesDisplay->writeDigitRaw(3, LEDSEG_LIFE);
+			
+		if(this->livesRemaining >= 3)
+			this->livesDisplay->writeDigitRaw(2, LEDSEG_LIFE);
+			
+		if(this->livesRemaining >= 2)
+			this->livesDisplay->writeDigitRaw(1, LEDSEG_LIFE);
+			
+		if(this->livesRemaining >= 1)
+			this->livesDisplay->writeDigitRaw(0, LEDSEG_LIFE);
+				
+		this->livesDisplay->writeDisplay();
+	}
+
 	void strike(byte totalStrikes)
 	{
 		Serial.println("New strike");
 		this->totalStrikes = totalStrikes;
+		this->livesRemaining--;
 		
 		// https://learn.adafruit.com/adafruit-led-backpack/0-54-alphanumeric-9b21a470-83ad-459c-af02-209d8d82c462
-		this->alpha4->writeDigitRaw(3, 0b0011111111000000);
-		this->alpha4->writeDigitRaw(0, 0xFFFF);
-		this->alpha4->writeDisplay();
+
+		this->updateLivesDisplay();
 
 		this->sendCommand(BROADCAST, COMMAND_STRIKE);
 		this->sfx->enqueue(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT);
+
+		if(this->livesRemaining == 0)
+			this->timeRemainingInS = 11; // one more than 10s countdown, so next tick we're at 10
 	}
 
 	void moduleDeactivated(byte totalDeactivatedModules)
@@ -203,13 +232,19 @@ class Master
 
 	void deactivate()
 	{
+		this->livesDisplay->clear();
+		this->livesDisplay->writeDisplay();
+
 		this->sfx->enqueue(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
 		this->sfx->enqueue(Sounds::PowerDown);
-		this->state = MASTER_STATE_DEACTIVATED;
+		this->state = MASTER_STATE_DEACTIVATED;		
 	}
 
 	void explode()
 	{
+		this->livesDisplay->clear();
+		this->livesDisplay->writeDisplay();
+
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
 		this->sfx->enqueue(Sounds::Explosion);
 		// TODO: render explosion on master displays
@@ -254,11 +289,20 @@ class Master
 		sendCommand(BROADCAST, COMMAND_DIFFICULTY, difficulty);
 
 		if(difficulty == 0)
-			timeRemainingInS = 45 * 60;
+		{
+			this->timeRemainingInS = 45 * 60;
+			this->livesRemaining = 4;
+		}
 		else if (difficulty == 1)
-			timeRemainingInS = 60;//30 * 60;
+		{
+			this->timeRemainingInS = 60;//30 * 60;
+			this->livesRemaining = 2;
+		}
 		else if (difficulty == 2)
-			timeRemainingInS = 20 * 60;
+		{
+			this->timeRemainingInS = 20 * 60;
+			this->livesRemaining = 1;
+		}
 	}
 
 public:
@@ -288,14 +332,16 @@ public:
 		this->display->setTextSize(2);
 		this->display->setTextColor(SSD1306_WHITE, SSD1306_BLACK);
 
-		this->alpha4 = new Adafruit_AlphaNum4();
-		this->alpha4->begin(0x70);
+		this->livesDisplay = new Adafruit_AlphaNum4();
+		this->livesDisplay->begin(0x70);
 	}
 
 	void arm()
 	{
 		this->state = MASTER_STATE_ARMED;
 		this->sendCommand(BROADCAST, COMMAND_ARM);
+		
+		this->updateLivesDisplay();
 
 		this->sfx->enqueue(Sounds::WeaponActivated);
 		
