@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "pins.h"
+
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_LEDBackpack.h>
@@ -28,7 +30,7 @@ class Master
 	byte state = 0;
 	byte difficulty = 1;
 	
-	unsigned long lastSecondMillis = 0;
+	unsigned long prevCountdownMillis = 0;
 	uint16_t timeRemainingInS = 0;
 
 	byte totalStrikes = 0;
@@ -43,6 +45,12 @@ class Master
 
 	unsigned long activateCountdownAtMillis = 0;
 	bool countdownActive = false;
+
+	unsigned long prevFlashMillis = 0;
+	unsigned long flashDuration = 0;
+	unsigned long flashingStartedOnMillis = 0;
+	bool flashing = false;
+	bool flashOn = false;
 
 	Sfx* sfx;
 
@@ -149,44 +157,48 @@ class Master
 	{
 		if(!this->countdownActive)
 		{
-			if(this->activateCountdownAtMillis <= now)
+			if(this->activateCountdownAtMillis != 0 && this->activateCountdownAtMillis <= now)
+			{
 				this->countdownActive = true;
+				this->activateCountdownAtMillis = 0;
+			}
 			else
+			{
 				return;
+			}
 		}
 
 		// Run once a second
-		if (now < lastSecondMillis + 1000)
+		if (now < prevCountdownMillis + 1000)
 			return;
 
-		if (timeRemainingInS == 0)
+		if (this->timeRemainingInS == 0)
 			return;
 
-		lastSecondMillis = now;
+		prevCountdownMillis = now;
 
-		timeRemainingInS--;
+		this->timeRemainingInS--;
 	
-		byte mins = timeRemainingInS / 60;
-		byte secs = timeRemainingInS % 60;
+		byte mins = this->timeRemainingInS / 60;
+		byte secs = this->timeRemainingInS % 60;
 
-		int timeAsDec = mins * 100 + secs;
-		this->timeDisplay->showNumberDecEx(timeAsDec, 0b01000000, true);
+		this->updateTimeDisplay();
 		
-		// only announce whole mins, 10,20,30,etc and 1,2,3,4,5,6,7,8,9
+		// only announce whole mins, 10,20,30,... and 1,2,3,4,5,6,7,8,9
 		if(secs == 0 && mins > 0 && (mins % 10 == 0 || mins < 10))
 			this->sfx->selfDesctructionIn(mins);
 
 		if(mins == 0)
 		{
-			// start at 12 as it takes ~2s to say "detonation in...", making the "10" land ~at 10s
+			// start at 12 as it takes 2s to say "detonation in...", making the "10" land at 10s
 			if(secs == 12)
 				this->sfx->detonation10sCountdown();
 			else if(secs == 0)
 				this->explode();
 		}
 		
-		byte arg0 = timeRemainingInS >> 8;
-		byte arg1 = timeRemainingInS;
+		byte arg0 = this->timeRemainingInS >> 8;
+		byte arg1 = this->timeRemainingInS;
 		sendCommand(BROADCAST, COMMAND_TIME, arg0, arg1);
 	}
 
@@ -256,14 +268,67 @@ class Master
 
 	void explode()
 	{
+		this->state = MASTER_STATE_EXPLODED;
+
 		this->livesDisplay->clear();
 		this->livesDisplay->writeDisplay();
 
 		this->timeDisplay->clear();
 
+		this->countdownActive = false;
+
+		// ~6s is the explosion sound duration
+		this->startFlashing(millis(), 6000);
+
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
 		this->sfx->enqueue(Sounds::Explosion);
-		// TODO: render explosion on master displays
+	}
+
+	void startFlashing(const unsigned long& now, const unsigned long& duration)
+	{
+		this->flashing = true;
+		this->flashDuration = duration;
+		this->flashingStartedOnMillis = now;
+		this->prevFlashMillis = now;
+	}
+
+	void flash(const unsigned long& now)
+	{
+		if(!this->flashing)
+			return;
+
+		if(this->prevFlashMillis + 100 > now)
+			return;
+
+		this->prevFlashMillis = now;
+		this->flashOn = !this->flashOn;
+
+		this->updateTimeDisplay();
+	}
+
+	void updateTimeDisplay()
+	{
+		if(this->flashing)
+		{
+			if(this->flashOn)
+			{
+    			uint8_t data[] = { 255, 255, 255, 255 };
+				this->timeDisplay->setSegments(data);
+			}
+			else
+			{
+				uint8_t data[] = { 0, 0, 0, 0 };
+				this->timeDisplay->setSegments(data);
+			}
+		}
+		else
+		{
+			byte mins = this->timeRemainingInS / 60;
+			byte secs = this->timeRemainingInS % 60;
+
+			int timeAsDec = mins * 100 + secs;
+			this->timeDisplay->showNumberDecEx(timeAsDec, 0b01000000, true);
+		}
 	}
 
 	void scanForModules()
@@ -329,15 +394,11 @@ public:
 
 		this->state = MASTER_STATE_BOOTING;
 
-		this->sfx = new Sfx(18, 19, 22);
-		this->sfx->enqueue(Sounds::SystemBootInitiated);
-
 		// TODO: is this random enough?
 		randomSeed(micros() + analogRead(0));
 
 		generateSerialNumber(this->serialNumber);
 
-		
 		this->display = new Adafruit_SSD1306(128, 64, &Wire);
 		if (!this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false))
 			Serial.println(F("SSD1306 allocation failed"));
@@ -351,9 +412,12 @@ public:
 		this->livesDisplay = new Adafruit_AlphaNum4();
 		this->livesDisplay->begin(0x70);
 		
-		this->timeDisplay = new TM1637Display(33, 25);
+		this->timeDisplay = new TM1637Display(TIME_DISPLAY_CLK, TIME_DISPLAY_DIO);
 		this->timeDisplay->setBrightness(7);
 		this->timeDisplay->clear();
+		
+		this->sfx = new Sfx();
+		this->sfx->enqueue(Sounds::SystemBootInitiated);
 	}
 
 	void arm()
@@ -372,18 +436,9 @@ public:
 		this->activateCountdownAtMillis = millis() + 6000;
 	}
 
-	void boot(bool ready, uint8_t difficulty)
+	void boot(uint8_t difficulty)
 	{
 		this->scanForModules();
-
-		if(ready)
-			this->ready(difficulty);
-		else
-			this->sfx->enqueue(Sounds::WeaponReady);
-	}
-
-	void ready(uint8_t difficulty)
-	{
 		this->setDifficulty(difficulty);
 		this->arm();
 	}
@@ -404,6 +459,7 @@ public:
 			return;
 
 		this->updateCountdown(now);
+		this->flash(now);
 	}
 
 };

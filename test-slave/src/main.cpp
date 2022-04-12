@@ -5,7 +5,7 @@ TestSlave* slave;
 void setup()
 {
 	Wire.begin();
-	Serial.begin(9600);
+	Serial.begin(115200);
 
 	slave = new TestSlave();
 }

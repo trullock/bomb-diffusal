@@ -32,7 +32,7 @@ class Sfx {
 	void playbackFinished();
 
 public:
-	Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout);
+	Sfx();
 
 	/** 
 	 * Enqueues (and plays) the given sound

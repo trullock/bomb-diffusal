@@ -1,14 +1,15 @@
 #include "sfx.h"
 #include <sounds.h>
 #include <SPIFFS.h>
+#include "pins.h"
 
-Sfx::Sfx(uint8_t bclk, uint8_t lrc, uint8_t dout)
+Sfx::Sfx()
 {
 	this->out = new AudioOutputI2S();
 	out->SetChannels(1);
 	out->SetOutputModeMono(true);
 	out->SetGain(0.5);
-	out->SetPinout(bclk, lrc, dout);
+	out->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
 	
 	this->mp3 = new AudioGeneratorMP3();
 
@@ -139,5 +140,6 @@ void Sfx::selfDesctructionIn(byte mins)
 
 void Sfx::detonation10sCountdown()
 {
+	Serial.println("Playing: Detonation Countdown");
 	this->enqueue(Sounds::DetonationCountdown);
 }

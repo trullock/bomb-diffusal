@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "master.h"
+#include "pins.h"
 
 #include "../lib/button.h"
 
@@ -8,11 +9,9 @@ Master* master;
 Button btnDifficulty0(7, INPUT_PULLUP);
 Button btnDifficulty1(8, INPUT_PULLUP);
 Button btnDifficulty2(9, INPUT_PULLUP);
-Button btnLidOpen(15, INPUT_PULLUP);
 
 volatile bool moduleInterruptRequest;
 bool booted = false;
-bool lidOpen = false;
 unsigned long lastMillis;
 
 void IRAM_ATTR moduleISR()
@@ -22,11 +21,12 @@ void IRAM_ATTR moduleISR()
 
 void setup()
 {
-	Wire.begin(4, 21);
-	Serial.begin(9600);
+	Wire.begin(I2C_DATA, I2C_CLK);
+	Serial.begin(115200);
 
 	moduleInterruptRequest = false;
-	attachInterrupt(23, moduleISR, RISING);
+	pinMode(MODULE_INTERRUPT, INPUT);
+	attachInterrupt(MODULE_INTERRUPT, moduleISR, RISING);
 
 	master = new Master();
 
@@ -43,27 +43,25 @@ void loop()
 	// else if(btnDifficulty2.pressed())
 	// 	master->setDifficulty(2);
 
+
+
 	uint8_t difficulty = 1;
 
-	if(!lidOpen && btnLidOpen.released())
-	{
-		lidOpen = true;
-		if(booted)
-			master->ready(difficulty);
-	}
+	unsigned long now = millis();
 
 	// wait some time for all modules to have booted + let the Booting sound play, as scanForModules is blocking and breaks the audio
-	if(!booted && millis() > 2500 + lastMillis)
+	if(!booted && now > 2500 + lastMillis)
 	{
 		booted = true;
-		master->boot(lidOpen, difficulty);
+		master->boot(difficulty);
 	}
 
-	if(booted && lidOpen && moduleInterruptRequest)
+	if(booted && moduleInterruptRequest)
 	{
-		master->handleModuleInterrupt(millis());
+		Serial.println("Module interrupt");
+		master->handleModuleInterrupt(now);
 		moduleInterruptRequest = false;
 	}
 
-	master->loop(millis());
+	master->loop(now);
 }
