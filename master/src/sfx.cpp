@@ -89,6 +89,8 @@ void Sfx::playQueue()
 	Serial.print("Playing: ");
 	Serial.println(path);
 
+	if(this->file)
+		delete this->file;
 	this->file = new AudioFileSourceSPIFFS(path.c_str());
 	if(!mp3->begin(file, out))
 	{			
@@ -104,6 +106,7 @@ void Sfx::playbackFinished()
 {
 	this->playing = false;
 	delete this->file;
+	this->file = NULL;
 	this->queue[this->queueHead] = 0;
 	this->playQueue();
 }
