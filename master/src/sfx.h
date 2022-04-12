@@ -7,36 +7,59 @@
 #include "../lib/Audio/AudioOutputI2S.h"
 
 #define SFX_ENQUEUE_MODE__DEFAULT 0
-#define SFX_ENQUEUE_MODE__PLAYNEXT 1
-#define SFX_ENQUEUE_MODE__INTERRUPT 2
+#define SFX_ENQUEUE_MODE__INTERRUPT 1
 
 
-// EventCallback.h
-class IEventCallback
+class ISound
 {
 public:
+	byte sound;
+	byte mode;
 	virtual void operator() () = 0;
+	virtual ~ISound() {}
 };
  
-template<typename T>
-class EventCallback : public IEventCallback
-{    
-private:
-	T* instance = 0;
-	void (T::*function)();
+class Sound : public ISound
+{
 public:
 	
-	EventCallback(T* instance, void (T::*function)())
-		: instance(instance), function(function) {}    
-	
-	virtual void operator () () override { (instance->*function)(); }    
+	Sound(byte sound, byte mode = SFX_ENQUEUE_MODE__DEFAULT)
+	{
+		this->sound = sound;
+		this->mode = mode;
+	}
 
+	virtual void operator () () override 
+	{
+	}
+};
+
+template<typename T>
+class SoundWithCallback : public ISound
+{
+	T* instance = 0;
+	void (*function)(T*);
+public:
+	
+	SoundWithCallback(byte sound, byte mode, T* instance, void (*function)(T*))
+		: 	instance(instance), 
+			function(function)
+	{
+		this->sound = sound;
+		this->mode = mode;
+	}
+
+	virtual void operator () () override 
+	{ 
+		(*function)(instance); 
+	}
 };
 
 
 class Sfx {
 
-	byte queue[16];
+	#define QUEUE_SIZE 16
+	ISound* queue[QUEUE_SIZE];
 	byte queueHead;
 	byte queueTail;
 	bool playing;
@@ -44,8 +67,6 @@ class Sfx {
 	AudioGeneratorMP3 *mp3;
 	AudioFileSourceSPIFFS *file;
 	AudioOutputI2S *out;
-
-	IEventCallback* currentCallback;
 
 	/**
 	 * Plays whatever is next in the queue
@@ -64,9 +85,7 @@ public:
 	 * Enqueues (and plays) the given sound
 	 * Use mode to control queuing behaviour
 	 */
-	void enqueue(byte sound, byte mode = 0);
-
-	void enqueue3(byte sound, byte mode, IEventCallback* callback);
+	void enqueue(ISound* sound);
 
 	/**
 	 * Announce "Self destruction in X min(s)"

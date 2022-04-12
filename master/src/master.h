@@ -150,7 +150,7 @@ class Master
 			this->moduleDeactivated(results.deactivatedModules);
 		
 		for(byte i = 0; i < results.soundCount; i++)
-			this->sfx->enqueue(results.sounds[i]);
+			this->enqueueSound(results.sounds[i]);
 	}
 
 	void updateCountdown(unsigned long now)
@@ -232,16 +232,21 @@ class Master
 		Serial.println("New strike");
 		this->totalStrikes = totalStrikes;
 		this->livesRemaining--;
-		
+
+		// deactivate countdown in case the final life is lost just before t=0, otherwise the "deactivation failure" sound would cause the countdown to play past 0
+		if(this->livesRemaining == 0)
+			this->countdownActive = false;
+
 		// https://learn.adafruit.com/adafruit-led-backpack/0-54-alphanumeric-9b21a470-83ad-459c-af02-209d8d82c462
 
 		this->updateLivesDisplay();
 
 		this->sendCommand(BROADCAST, COMMAND_STRIKE);
-		this->sfx->enqueue(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT);
-
-		if(this->livesRemaining == 0)
-			this->explode();
+		
+		this->enqueueSound(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT, [](Master* master) {
+			if(master->livesRemaining == 0)
+				master->explode();
+		});
 	}
 
 	void moduleDeactivated(byte totalDeactivatedModules)
@@ -252,7 +257,7 @@ class Master
 		if(this->totalDeactivatedModules == this->moduleCount)
 			this->deactivate();
 		else
-			this->sfx->enqueue(Sounds::ComponentDeactivated);
+			this->enqueueSound(Sounds::ComponentDeactivated);
 	}
 
 	void deactivate()
@@ -261,8 +266,8 @@ class Master
 		//this->livesDisplay->clear();
 		//this->livesDisplay->writeDisplay();
 
-		this->sfx->enqueue(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
-		this->sfx->enqueue(Sounds::PowerDown);
+		this->enqueueSound(Sounds::WeaponDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
+		this->enqueueSound(Sounds::PowerDown);
 		this->state = MASTER_STATE_DEACTIVATED;		
 	}
 
@@ -281,20 +286,23 @@ class Master
 		this->startFlashing(millis(), 6000);
 
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
-		Master* that = this;
-		auto cb = []() {
-			//master->test();
-			Serial.println("Finished exploding");
-		};
-		EventCallback<Master>* callback = new EventCallback<Master>(that, &Master::foo);
-		this->sfx->enqueue3(Sounds::Explosion, SFX_ENQUEUE_MODE__DEFAULT, callback);
+		this->enqueueSound(Sounds::Explosion, SFX_ENQUEUE_MODE__DEFAULT, [](Master* master) {
+			master->foo();
+		});
+	}
+
+	void enqueueSound(byte sound, byte mode = SFX_ENQUEUE_MODE__DEFAULT, void (*callback)(Master*) = NULL)
+	{
+		if(callback != NULL)
+			this->sfx->enqueue(new SoundWithCallback<Master>(sound, mode, this, callback));
+		else
+			this->sfx->enqueue(new Sound(sound, mode));
 	}
 
 	void foo()
 	{
 		Serial.print("MEga test");
 	}
-
 
 	void startFlashing(const unsigned long& now, const unsigned long& duration)
 	{
@@ -429,7 +437,7 @@ public:
 		this->timeDisplay->clear();
 		
 		this->sfx = new Sfx();
-		this->sfx->enqueue(Sounds::SystemBootInitiated);
+		this->enqueueSound(Sounds::SystemBootInitiated, SFX_ENQUEUE_MODE__INTERRUPT);
 	}
 
 	void arm()
@@ -439,7 +447,7 @@ public:
 		
 		this->updateLivesDisplay();
 
-		this->sfx->enqueue(Sounds::WeaponActivated);
+		this->enqueueSound(Sounds::WeaponActivated);
 		
 		byte mins = this->timeRemainingInS / 60;
 		this->sfx->selfDesctructionIn(mins);
