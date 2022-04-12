@@ -281,8 +281,20 @@ class Master
 		this->startFlashing(millis(), 6000);
 
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
-		this->sfx->enqueue(Sounds::Explosion);
+		Master* that = this;
+		auto cb = []() {
+			//master->test();
+			Serial.println("Finished exploding");
+		};
+		EventCallback<Master>* callback = new EventCallback<Master>(that, &Master::foo);
+		this->sfx->enqueue3(Sounds::Explosion, SFX_ENQUEUE_MODE__DEFAULT, callback);
 	}
+
+	void foo()
+	{
+		Serial.print("MEga test");
+	}
+
 
 	void startFlashing(const unsigned long& now, const unsigned long& duration)
 	{

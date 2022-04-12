@@ -10,6 +10,30 @@
 #define SFX_ENQUEUE_MODE__PLAYNEXT 1
 #define SFX_ENQUEUE_MODE__INTERRUPT 2
 
+
+// EventCallback.h
+class IEventCallback
+{
+public:
+	virtual void operator() () = 0;
+};
+ 
+template<typename T>
+class EventCallback : public IEventCallback
+{    
+private:
+	T* instance = 0;
+	void (T::*function)();
+public:
+	
+	EventCallback(T* instance, void (T::*function)())
+		: instance(instance), function(function) {}    
+	
+	virtual void operator () () override { (instance->*function)(); }    
+
+};
+
+
 class Sfx {
 
 	byte queue[16];
@@ -20,6 +44,8 @@ class Sfx {
 	AudioGeneratorMP3 *mp3;
 	AudioFileSourceSPIFFS *file;
 	AudioOutputI2S *out;
+
+	IEventCallback* currentCallback;
 
 	/**
 	 * Plays whatever is next in the queue
@@ -39,6 +65,8 @@ public:
 	 * Use mode to control queuing behaviour
 	 */
 	void enqueue(byte sound, byte mode = 0);
+
+	void enqueue3(byte sound, byte mode, IEventCallback* callback);
 
 	/**
 	 * Announce "Self destruction in X min(s)"

@@ -18,6 +18,8 @@ Sfx::Sfx()
 	this->queueTail = 0;
 
 	this->playing = false;
+	this->file = 0;
+	this->currentCallback = 0;
 
 	if(!SPIFFS.begin(false)){
 		Serial.println("An Error has occurred while mounting SPIFFS");
@@ -65,6 +67,12 @@ void Sfx::enqueue(byte sound, byte mode)
 	this->playQueue();
 }
 
+void Sfx::enqueue3(byte sound, byte mode, IEventCallback* callback)
+{
+	this->currentCallback = callback;
+	this->enqueue(sound, mode);
+}
+
 void Sfx::playQueue()
 {
 	if(this->playing)
@@ -108,6 +116,11 @@ void Sfx::playbackFinished()
 	delete this->file;
 	this->file = NULL;
 	this->queue[this->queueHead] = 0;
+	if(this->currentCallback != NULL)
+	{
+		(*this->currentCallback)();
+		this->currentCallback = NULL;
+	}
 	this->playQueue();
 }
 
