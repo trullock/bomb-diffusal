@@ -11,15 +11,12 @@ class Maze : public Slave {
 	// https://www.makerguides.com/max7219-led-dot-matrix-display-arduino-tutorial/
 	// https://majicdesigns.github.io/MD_MAX72XX/class_m_d___m_a_x72_x_x.html
 	MD_MAX72XX* display;
-
 	AnalogButtons* buttons;
 
-	/// Pulsing
-	
+	/// Display animations
 	float pulsePhase = 0;
 	unsigned long nextPulseMillis = 0;
 	unsigned long nextMillis = 0;
-
 	uint8_t deactivationAnimationStage = 0;
 
 	// Positioning
@@ -42,14 +39,14 @@ class Maze : public Slave {
 	#define FINISHX 6
 	#define FINISHY 7
 	const uint8_t mazeFeatures[1][8] = {
-		1, 4, // clue 1
-		5, 6, // clue 2
-		0, 2, // start,
-		6, 6 // finish
+		1, 4, // clue 1 x,y
+		5, 6, // clue 2 x,y
+		0, 2, // start x,y
+		6, 6 // finish x,y
 	};
 	const uint8_t mazes[1][2][8] = {
 		{
-			// X walls (by row)
+			// Walls in X direction (by row)
 			{
 				0b0110000,
 				0b1101010,
@@ -60,7 +57,7 @@ class Maze : public Slave {
 				0b1011111,
 				0b0010110
 			},
-			// y walls (by col)
+			// Walls in Y direction (by col)
 			{
 				0b0000000,
 				0b0010101,
@@ -78,16 +75,23 @@ class Maze : public Slave {
 	{
 		Slave::setDifficulty(diff);
 
-		//randomSeed(millis());
-		//int r = random(0, 0);
+		randomSeed(analogRead(PIN_RandomSeed));
 		
-		// TODO: choose maze
-		this->mazeIndex = 0;
+		uint8_t min = diff * 3;
+		uint8_t max = min + 3;
+
+		// TODO: Keep in sync with number of mazes
+		min = 0;
+		max = 1;
+
+		int r = random(min, max);
 		
-		Debug();
+		this->mazeIndex = r;
+		
+		debug();
 	}
 
-	void Debug()
+	void debug()
 	{
 		Serial.print(' ');
 		for(char w = 0; w < (cols * 2) - 1; w++)
@@ -112,11 +116,16 @@ class Maze : public Slave {
 		}
 	}
 
+	void reset()
+	{
+		this->deactivationAnimationStage = 0;
+	}
+
 	void arm() override
 	{
+		this->reset();
 		Slave::arm();
 		this->showClue();
-		this->deactivationAnimationStage = 0;
 	}
 
 	void showClue()
@@ -153,10 +162,6 @@ class Maze : public Slave {
 
 		if(btn != BTN_NONE)
 		{
-			
-			this->deactivate();
-			return;
-
 			Serial.println("Started navigation");
 
 			this->posX = this->mazeFeatures[this->mazeIndex][STARTX];
@@ -244,7 +249,8 @@ class Maze : public Slave {
 		display->update();	
 	}
 
-	void strike() override {
+	void strike() override
+	{
 		Slave::strike();
 
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
