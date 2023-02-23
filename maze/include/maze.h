@@ -15,6 +15,7 @@ class Maze : public Slave {
 
 	/// Display animations
 	float pulsePhase = 0;
+	uint8_t pulseFreq = 50;
 	unsigned long nextPulseMillis = 0;
 	unsigned long nextMillis = 0;
 	uint8_t deactivationAnimationStage = 0;
@@ -131,6 +132,9 @@ class Maze : public Slave {
 	void showClue()
 	{
 		this->state = STATE_CLUE;
+
+		this->pulseFreq = 50;
+
 		display->clear();
 		display->setPoint(this->mazeFeatures[this->mazeIndex][CLUE1X], this->mazeFeatures[this->mazeIndex][CLUE1Y], true);
 		display->setPoint(this->mazeFeatures[this->mazeIndex][CLUE2X], this->mazeFeatures[this->mazeIndex][CLUE2Y], true);
@@ -143,7 +147,7 @@ class Maze : public Slave {
 		if (nextPulseMillis > millis())
 			return;
 
-		nextPulseMillis = millis() + 50;
+		nextPulseMillis = millis() + pulseFreq;
 
 		pulsePhase += 20;
 		if (pulsePhase >= 360)
@@ -216,6 +220,7 @@ class Maze : public Slave {
 			}
 
 			this->reportStrike();
+			return;
 		}
 
 		if (wallCollision != 0)
@@ -255,10 +260,12 @@ class Maze : public Slave {
 
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
 
+		this->pulseFreq = 20;
+
 		for (int y = 0; y < rows; y++)
 		for (int x = 0; x < cols; x++)
 			// TODO: set buffer instead to be faster
-			display->setPoint(y, x, 1);
+			display->setPoint(y, x, true);
 		display->update();
 	}
 
