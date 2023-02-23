@@ -1,4 +1,5 @@
 #include <slave.h>
+#include <sounds.h>
 #include <RotaryEncoder.h>
 #include "../lib/button.h"
 #include <TM1637Display.h>
@@ -150,9 +151,11 @@ class Morse : public Slave {
 	}
 
 	void deactivate() override
-	{
+	{		
 		Slave::deactivate();
 
+		this->queueSfx(Sounds::SatelliteUplinkEstablished);
+		
 		setLed(false);
 
 		digitalWrite(Disarmed_LED_Pin, HIGH);

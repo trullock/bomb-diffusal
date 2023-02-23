@@ -4,7 +4,7 @@
 
 Slave* Slave::self = nullptr;
 
-Slave::Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin)
+Slave::Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin, uint8_t deactivatedPin)
 {
 	self = this;
 
@@ -13,6 +13,10 @@ Slave::Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin)
 	this->raiseInterruptPin = raiseInterruptPin;
 	this->interrupting = false;
 	pinMode(raiseInterruptPin, OUTPUT);
+
+	pinMode(deactivatedPin, OUTPUT);
+	this->deactivatedPin = deactivatedPin;
+	setDeactivatedLED(false);
 
 	Wire.begin(i2cAddress);
 	// enable broadcasts to be received
@@ -107,6 +111,13 @@ void Slave::deactivate()
 	Serial.println("Deactivated");
 	this->state = STATE_DEACTIVATED;
 	this->raiseMasterInterrupt();
+
+	this->setDeactivatedLED(true);
+}
+
+void Slave::setDeactivatedLED(bool on)
+{
+	digitalWrite(this->deactivatedPin, on ? HIGH : LOW);
 }
 
 bool Slave::queueSfx(byte sound)
@@ -114,7 +125,7 @@ bool Slave::queueSfx(byte sound)
 	if(this->sfxQueueLength == sizeof(this->sfxQueue) - 1)
 		return false;
 
-	Serial.print("Playing Sfx: ");
+	Serial.print("Requesting Sfx: ");
 	Serial.println(sound);
 
 	this->sfxQueue[this->sfxQueueLength++] = sound;

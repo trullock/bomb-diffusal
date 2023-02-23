@@ -49,6 +49,17 @@ void setCombination(byte (&combination)[5], byte (&serialNumber)[5])
 	combination[2] = firstVowelIndex;
 	combination[3] = characterIndexSum;
 	combination[4] = characterSum;
+
+	Serial.print("Combination: ");
+	Serial.print(combination[0]);
+	Serial.print(',');
+	Serial.print(combination[1]);
+	Serial.print(',');
+	Serial.print(combination[2]);
+	Serial.print(',');
+	Serial.print(combination[3]);
+	Serial.print(',');
+	Serial.println(combination[4]);
 }
 
 #endif

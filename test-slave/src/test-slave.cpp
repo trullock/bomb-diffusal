@@ -40,11 +40,7 @@ public:
 		
 		if(btnNotify.pressed())
 		{
-			this->queueSfx(Sounds::IncomingMessage);
-			this->queueSfx(Sounds::NatoAlpha);
-			this->queueSfx(Sounds::NatoBravo);
-			this->queueSfx(Sounds::NatoCharlie);
-			this->queueSfx(Sounds::NatoDelta);
+			this->queueSfx(Sounds::SatelliteUplinkEstablished);
 			this->raiseMasterInterrupt();
 		}
 	}

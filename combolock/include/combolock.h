@@ -1,12 +1,24 @@
 #include <slave.h>
-#include <Encoder.h>
+#include <RotaryEncoder.h>
 #include <button.h>
-#include <LedControl.h>
 #include <serialnumber.h>
 #include <lock.h>
+#include <whmxe_595.h>
 
 #ifndef Combolock_h
 #define Combolock_h
+
+/* ----------- Pins ----------- */
+#define PIN_Deactivated 9
+#define PIN_MasterInterrupt A0
+#define PIN_RotaryA 5
+#define PIN_RotaryB 6
+#define PIN_Button 10
+#define PIN_Load A1
+#define PIN_Sclk A2
+#define PIN_SDI A3
+
+
 
 #define DIRECTION_NONE 0
 #define DIRECTION_LEFT 1
@@ -15,15 +27,18 @@
 
 #define STATE_TURNING 1
 
+
 class Combolock : public Slave {
 
 	unsigned long nextMillis;
+	unsigned long nextFlashMillis = 0;
+	bool nextFlashState = 0;
 
 	/// Button details
 	Button btnEnter;
 
 	//// Knob details
-	Encoder knob;
+	RotaryEncoder knob;
 	int32_t knobPosition = 0;
 	
 	byte lockPositionIndex = 0;
@@ -33,7 +48,7 @@ class Combolock : public Slave {
 	byte combination[5];
 
 	// Display
-	LedControl display;
+	whmxe_595 display;
 
 	void setSerialNumber(byte a, byte b, byte c, byte d, byte e) override
 	{
@@ -57,11 +72,8 @@ class Combolock : public Slave {
 		Slave::strike();
 
 		this->nextMillis = millis() + STRIKE_DURATION_MS;
-
-		display.setDigit(0, 0, 8, true);
-		display.setDigit(0, 1, 8, true);
-		display.setDigit(0, 2, 8, true);
-		display.setDigit(0, 3, 8, true);
+		this->nextFlashMillis = 0;
+		flashStrike();
 	}
 
 	void explode() override
@@ -73,25 +85,30 @@ class Combolock : public Slave {
 	{
 		Slave::deactivate();
 
-		display.setIntensity(0, 1);
-		display.setChar(0, 0, '-', false);
-		display.setChar(0, 1, '-', false);
-		display.setChar(0, 2, '-', false);
-		display.setChar(0, 3, '-', false);
+		display.clear();
 	}
 
 	void handleKnob()
 	{
-		int32_t position = knob.read();
+		knob.tick();
+		int32_t position = knob.getPosition();
+
 		if (position != knobPosition)
 		{
-			// TODO: handle overflow loops?
+			// TODO: handle overflow loops? int32 is pretty big, can probably ignore
 			
 			uint8_t direction = position < knobPosition ? DIRECTION_LEFT : DIRECTION_RIGHT;
 			knobPosition = position;
-			lockPosition += position;
+			lockPosition += direction == DIRECTION_LEFT ? -1 : 1;
 
-			// TODO can the encoder ever skip numbers? Shouldnt think so
+		
+			// TODO: what should happen below, does this effect direction-correctness?
+
+			// restrict to 0-99 range
+			if(lockPosition == 100)
+				lockPosition = 0;
+			else if(lockPosition == 255)
+				lockPosition = 99;
 
 			this->handleLockPositionChange(direction);
 		}
@@ -138,36 +155,57 @@ class Combolock : public Slave {
 			return;
 		}
 
+		Serial.println("Invalid combination");
+		Serial.flush();
 		this->reportStrike();
 	}
 
 	void updateDisplay()
 	{
-		int hundreds = this->lockPosition / 100;
-		int tens = (this->lockPosition - hundreds * 100) / 10;
-		int ones = this->lockPosition % 10;
+		display.setNumber(this->lockPosition);
+	}
 
-		display.setDigit(0, 0, ones, false);
-		display.setDigit(0, 1, tens, false);
-		display.setDigit(0, 2, hundreds, false);
+	void flashStrike()
+	{
+		if(this->nextFlashMillis > millis())
+			return;
+
+		if(this->nextFlashState)
+		{
+			display.setNumber(88);
+			this->setDeactivatedLED(true);
+		}
+		else
+		{
+			display.clear();
+			this->setDeactivatedLED(false);
+		}
+
+		this->nextFlashState = !this->nextFlashState;
+
+		this->nextFlashMillis += 200;
 	}
 
 	void stopStriking()
 	{
 		this->state = STATE_TURNING;
-		display.clearDisplay(0);
+		this->updateDisplay();
 	}
 
 public:
 	Combolock() : 
-		Slave(12, 2), 
-		btnEnter(8, INPUT_PULLUP), 
-		knob(6, 7),
-		display(12, 11, 10, 1)
+		Slave(2, PIN_MasterInterrupt, PIN_Deactivated), 
+		btnEnter(PIN_Button, INPUT_PULLUP),
+		knob(PIN_RotaryA, PIN_RotaryB, RotaryEncoder::LatchMode::FOUR3),
+		display(PIN_SDI, PIN_Sclk, PIN_Load)
 	{
-		this->display.shutdown(0, false);
-		this->display.setIntensity(0, 8);
-		this->display.clearDisplay(0);
+		this->display.clear();
+
+		#ifdef DEVMODE
+			this->setSerialNumber(12, 26, 2, 17, 1);
+			this->setDifficulty(1);
+			this->arm();
+		#endif
 	}
 
 	void loop()
@@ -185,6 +223,8 @@ public:
 		{
 			if(millis() >= nextMillis)
 				this->stopStriking();
+			else
+			this->flashStrike();
 		}
 	}
 };

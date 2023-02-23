@@ -406,7 +406,7 @@ MD_MAX72XX::fontType_t PROGMEM _sysfont[] =
   3, 21, 21, 10,		// 179 - '³ Superscript three'
   2, 2, 1,		// 180 - '´ Acute accent'
   4, 248, 32, 64, 120,		// 181 - 'µ Micro sign'
-  5, 6, 9, 127, 1, 127,		// 182 - 'Pilcrow sign'
+  5, 6, 9, 127, 1, 127,		// 182 - 'Pilcrow sign'
   2, 24, 24,		// 183 - '· Middle dot'
   4, 0, 128, 160, 192,		// 184 - '¸ Cedilla'
   3, 18, 31, 16,		// 185 - '¹ Superscript one'
@@ -742,4 +742,3 @@ MD_MAX72XX::fontType_t PROGMEM _sysfont[] =
 };
 
 #endif //USE_LOCAL_FONT
-

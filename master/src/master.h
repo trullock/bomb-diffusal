@@ -9,6 +9,9 @@
 
 #include <TM1637Display.h>
 
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h>
+
 #include "../lib/constants.h"
 #include "module-results.h"
 #include "sfx.h"
@@ -42,8 +45,8 @@ class Master
 	Adafruit_SSD1306* display;
 	Adafruit_AlphaNum4* livesDisplay;
 	TM1637Display* timeDisplay;
+	hd44780_I2Cexp* lcd;
 
-	unsigned long activateCountdownAtMillis = 0;
 	bool countdownActive = false;
 
 	unsigned long prevFlashMillis = 0;
@@ -156,17 +159,7 @@ class Master
 	void updateCountdown(unsigned long now)
 	{
 		if(!this->countdownActive)
-		{
-			if(this->activateCountdownAtMillis != 0 && this->activateCountdownAtMillis <= now)
-			{
-				this->countdownActive = true;
-				this->activateCountdownAtMillis = 0;
-			}
-			else
-			{
-				return;
-			}
-		}
+			return;
 
 		// Run once a second
 		if (now < prevCountdownMillis + 1000)
@@ -186,20 +179,61 @@ class Master
 		
 		// only announce whole mins, 10,20,30,... and 1,2,3,4,5,6,7,8,9
 		if(secs == 0 && mins > 0 && (mins % 10 == 0 || mins < 10))
-			this->sfx->selfDesctructionIn(mins);
+			// TODO: this could get enqueued behind another effect...
+			this->selfDesctructionIn(mins, NULL);
 
-		if(mins == 0)
+		// start at 12s as it takes 2s to say "detonation in...", making the "10" land at 10s
+		if(mins == 0 && secs == 12)
 		{
-			// start at 12 as it takes 2s to say "detonation in...", making the "10" land at 10s
-			if(secs == 12)
-				this->sfx->detonation10sCountdown();
-			else if(secs == 0)
-				this->explode();
+			this->enqueueSound(Sounds::DetonationCountdown, SFX_ENQUEUE_MODE__INTERRUPT, [](Master* master){
+				master->explode();
+			});
 		}
 		
 		byte arg0 = this->timeRemainingInS >> 8;
 		byte arg1 = this->timeRemainingInS;
 		sendCommand(BROADCAST, COMMAND_TIME, arg0, arg1);
+	}
+
+	void updateTimeDisplay()
+	{
+		if(this->flashing)
+		{
+			if(this->flashOn)
+			{
+    			uint8_t data[] = { 255, 255, 255, 255 };
+				this->timeDisplay->setSegments(data);
+			}
+			else
+			{
+				uint8_t data[] = { 0, 0, 0, 0 };
+				this->timeDisplay->setSegments(data);
+			}
+		}
+		else
+		{
+			byte mins = this->timeRemainingInS / 60;
+			byte secs = this->timeRemainingInS % 60;
+
+			if(!this->countdownActive)
+			{
+				mins = 0;
+				secs = 0;
+			}
+
+			int timeAsDec = mins * 100 + secs;
+			this->timeDisplay->showNumberDecEx(timeAsDec, 0b01000000, true);
+
+			this->lcd->setCursor(0, 1);
+			this->lcd->print("Time left: ");
+			if(mins < 10)
+				this->lcd->print('0');
+			this->lcd->print(mins);
+			this->lcd->print(':');
+			if(secs < 10)
+				this->lcd->print('0');
+			this->lcd->print(secs);
+		}
 	}
 
 	void updateLivesDisplay()
@@ -225,6 +259,30 @@ class Master
 			this->livesDisplay->writeDigitRaw(0, LEDSEG_LIFE);
 				
 		this->livesDisplay->writeDisplay();
+
+		this->lcd->setCursor(10, 3);
+		this->lcd->print(this->livesRemaining);
+	}
+
+	void updateLCD()
+	{
+		this->lcd->backlight();
+
+		this->lcd->setCursor(0, 0);
+		this->lcd->print("Serial Number: ");
+		this->lcd->print(serialCharToAscii(this->serialNumber[0]));
+		this->lcd->print(serialCharToAscii(this->serialNumber[1]));
+		this->lcd->print(serialCharToAscii(this->serialNumber[2]));
+		this->lcd->print(serialCharToAscii(this->serialNumber[3]));
+		this->lcd->print(serialCharToAscii(this->serialNumber[4]));
+
+		this->lcd->setCursor(0, 2);
+		this->lcd->print("Active Modules: ");
+		this->lcd->print(this->moduleCount - this->totalDeactivatedModules);
+		
+		this->lcd->setCursor(0, 3);
+		this->lcd->print("Attempts: ");
+		this->lcd->print(this->livesRemaining);
 	}
 
 	void strike(byte totalStrikes)
@@ -235,7 +293,10 @@ class Master
 
 		// deactivate countdown in case the final life is lost just before t=0, otherwise the "deactivation failure" sound would cause the countdown to play past 0
 		if(this->livesRemaining == 0)
+		{
 			this->countdownActive = false;
+			this->updateTimeDisplay();
+		}
 
 		// https://learn.adafruit.com/adafruit-led-backpack/0-54-alphanumeric-9b21a470-83ad-459c-af02-209d8d82c462
 
@@ -243,10 +304,14 @@ class Master
 
 		this->sendCommand(BROADCAST, COMMAND_STRIKE);
 		
-		this->enqueueSound(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT, [](Master* master) {
-			if(master->livesRemaining == 0)
+		this->enqueueSound(Sounds::DeactivationFailure, SFX_ENQUEUE_MODE__INTERRUPT);
+
+		if(this->livesRemaining == 0)
+		{
+			this->enqueueSound(Sounds::DetonationIn321, SFX_ENQUEUE_MODE__DEFAULT, [](Master* master) {
 				master->explode();
-		});
+			});
+		}
 	}
 
 	void moduleDeactivated(byte totalDeactivatedModules)
@@ -254,15 +319,17 @@ class Master
 		Serial.println("New module deactivated");
 		this->totalDeactivatedModules = totalDeactivatedModules;
 
+		this->updateLCD();
+
 		if(this->totalDeactivatedModules == this->moduleCount)
 			this->deactivate();
 		else
-			this->enqueueSound(Sounds::ComponentDeactivated);
+			this->enqueueSound(Sounds::ComponentDeactivated, SFX_ENQUEUE_MODE__INTERRUPT);
 	}
 
 	void deactivate()
 	{
-		this-> countdownActive = false;
+		this->countdownActive = false;
 		//this->livesDisplay->clear();
 		//this->livesDisplay->writeDisplay();
 
@@ -286,9 +353,7 @@ class Master
 		this->startFlashing(millis(), 6000);
 
 		this->sendCommand(BROADCAST, COMMAND_EXPLODE);
-		this->enqueueSound(Sounds::Explosion, SFX_ENQUEUE_MODE__DEFAULT, [](Master* master) {
-			master->foo();
-		});
+		this->enqueueSound(Sounds::Explosion, SFX_ENQUEUE_MODE__DEFAULT);
 	}
 
 	void enqueueSound(byte sound, byte mode = SFX_ENQUEUE_MODE__DEFAULT, void (*callback)(Master*) = NULL)
@@ -297,11 +362,6 @@ class Master
 			this->sfx->enqueue(new SoundWithCallback<Master>(sound, mode, this, callback));
 		else
 			this->sfx->enqueue(new Sound(sound, mode));
-	}
-
-	void foo()
-	{
-		Serial.print("MEga test");
 	}
 
 	void startFlashing(const unsigned long& now, const unsigned long& duration)
@@ -324,31 +384,6 @@ class Master
 		this->flashOn = !this->flashOn;
 
 		this->updateTimeDisplay();
-	}
-
-	void updateTimeDisplay()
-	{
-		if(this->flashing)
-		{
-			if(this->flashOn)
-			{
-    			uint8_t data[] = { 255, 255, 255, 255 };
-				this->timeDisplay->setSegments(data);
-			}
-			else
-			{
-				uint8_t data[] = { 0, 0, 0, 0 };
-				this->timeDisplay->setSegments(data);
-			}
-		}
-		else
-		{
-			byte mins = this->timeRemainingInS / 60;
-			byte secs = this->timeRemainingInS % 60;
-
-			int timeAsDec = mins * 100 + secs;
-			this->timeDisplay->showNumberDecEx(timeAsDec, 0b01000000, true);
-		}
 	}
 
 	void scanForModules()
@@ -406,6 +441,37 @@ class Master
 		}
 	}
 
+	void selfDesctructionIn(byte mins, void (*callback)(Master*))
+	{
+		Serial.print("Playing: Self destruction in ");
+		Serial.print(mins);
+		Serial.println(" mins(s)");
+
+		this->enqueueSound(Sounds::SelfDestructionIn);
+		
+		byte sound = 0;
+
+		// This doesnt support 11-19, but thats ok because we should never be doing that
+
+		byte ones = mins % 10;
+		byte tens = mins / 10;
+
+		if(tens > 0)
+		{
+			sound = 100 + (tens * 10);
+			this->enqueueSound(sound);
+		}
+
+		if(ones > 0)
+		{
+			sound = 100 + ones;
+			this->enqueueSound(sound);
+		}
+
+		this->enqueueSound(mins == 1 ? Sounds::Minute : Sounds::Minutes, SFX_ENQUEUE_MODE__DEFAULT, callback);
+	}
+
+
 public:
 
 	Master()
@@ -435,9 +501,14 @@ public:
 		this->timeDisplay = new TM1637Display(TIME_DISPLAY_CLK, TIME_DISPLAY_DIO);
 		this->timeDisplay->setBrightness(7);
 		this->timeDisplay->clear();
+
+		this->lcd = new hd44780_I2Cexp();
+		this->lcd->begin(20, 4);
+		this->lcd->clear();
+		this->lcd->noBacklight();
 		
 		this->sfx = new Sfx();
-		this->enqueueSound(Sounds::SystemBootInitiated, SFX_ENQUEUE_MODE__INTERRUPT);
+		this->enqueueSound(Sounds::SystemBootInitiated);
 	}
 
 	void arm()
@@ -446,14 +517,14 @@ public:
 		this->sendCommand(BROADCAST, COMMAND_ARM);
 		
 		this->updateLivesDisplay();
+		this->updateLCD();
 
 		this->enqueueSound(Sounds::WeaponActivated);
 		
 		byte mins = this->timeRemainingInS / 60;
-		this->sfx->selfDesctructionIn(mins);
-
-		// 6s is the approx time the selfDesctruction sfx takes to play
-		this->activateCountdownAtMillis = millis() + 6000;
+		this->selfDesctructionIn(mins, [](Master* master) {
+			master->countdownActive = true;
+		});
 	}
 
 	void boot(uint8_t difficulty)

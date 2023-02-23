@@ -30,7 +30,8 @@ class Slave {
 	volatile byte commandBuffer[12];
 	volatile byte commandBufferLength = 0;
 	
-	unsigned int raiseInterruptPin;
+	uint8_t raiseInterruptPin;
+	uint8_t deactivatedPin;
 	bool interrupting;
 
 	volatile byte sfxQueue[MODULE_MAX_SFX_QUEUE_LENGTH];
@@ -74,6 +75,11 @@ protected:
 	virtual void setDifficulty(byte difficulty);
 
 	/**
+	 * Sets the state of the deactivated LED
+	*/
+	void setDeactivatedLED(bool on);
+
+	/**
 	 * Arms this module, ready for interaction by the user.
 	 * This is called when the master tells us we're armed.
 	 */
@@ -114,7 +120,7 @@ public:
 	/**
 	 * Creates a new slave on the given I2C address (1-254) using the given master-interrupt pin
 	 */
-	Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin);
+	Slave(uint8_t i2cAddress, uint8_t raiseInterruptPin, uint8_t deactivatedPin);
 
 	/**
 	 * Must be called regularly to enable this module to perform its duties

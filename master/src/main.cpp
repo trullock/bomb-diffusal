@@ -6,9 +6,9 @@
 #include "../lib/button.h"
 
 Master* master;
-Button btnDifficulty0(7, INPUT_PULLUP);
-Button btnDifficulty1(8, INPUT_PULLUP);
-Button btnDifficulty2(9, INPUT_PULLUP);
+Button btnDifficulty0(5, INPUT_PULLUP);
+Button btnDifficulty1(18, INPUT_PULLUP);
+Button btnDifficulty2(19, INPUT_PULLUP);
 
 volatile bool moduleInterruptRequest;
 bool booted = false;

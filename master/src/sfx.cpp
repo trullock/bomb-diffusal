@@ -44,32 +44,34 @@ void Sfx::enqueue(ISound* sound)
 {
 	if(sound->mode == SFX_ENQUEUE_MODE__INTERRUPT)
 	{
-		if(this->mp3->isRunning())
-		{
-			this->playing = false;
-			this->mp3->stop();
-			// TODO: do we want to call the callback when interrupted? Id guess not? (we currently do)
-			this->playbackFinished();
-		}
-		
-		// wipe whole queue
+		// wipe whole queue, do this before playbackFinished() so we dont trigger any callbacks for whats playing
 		this->queueTail = this->queueHead;
 		for(uint8_t i = 0; i < QUEUE_SIZE; i++)
 		{
 			if(this->queue[i] == NULL)
 				continue;
+				
 			delete this->queue[i];
 			this->queue[i] = NULL;
+		}
+
+		if(this->mp3->isRunning())
+		{
+			this->playing = false;
+			this->mp3->stop();
+			this->playbackFinished();
 		}
 	}
 
 
-	// TODO: this will misbehave is you try to enqueue more than the queue size, what should happen when you queue the 17th sound?
+	// TODO: this will misbehave if you try to enqueue more than the queue size, what should happen when you queue the 17th sound?
 	this->queueTail++;
 	if(this->queueTail == QUEUE_SIZE)
 		this->queueTail = 0;
 
-	Serial.print("Enqueuing at queue position: ");
+	Serial.print("Enqueuing ");
+	Serial.print(sound->sound);
+	Serial.print(" at queue position: ");
 	Serial.println(this->queueTail);
 	this->queue[this->queueTail] = sound;
 	this->playQueue();
@@ -129,40 +131,4 @@ void Sfx::playbackFinished()
 		delete this->queue[this->queueHead];
 		this->queue[this->queueHead] = NULL;
 	}
-}
-
-void Sfx::selfDesctructionIn(byte mins)
-{
-	Serial.print("Playing: Self destruction in ");
-	Serial.print(mins);
-	Serial.println(" mins(s)");
-
-	this->enqueue(new Sound(Sounds::SelfDestructionIn));
-	
-	byte sound = 0;
-
-	// This doesnt support 11-19, but thats ok because we should never be doing that
-
-	byte ones = mins % 10;
-	byte tens = mins / 10;
-
-	if(tens > 0)
-	{
-		sound = 100 + (tens * 10);
-		this->enqueue(new Sound(sound));
-	}
-
-	if(ones > 0)
-	{
-		sound = 100 + ones;
-		this->enqueue(new Sound(sound));
-	}
-
-	this->enqueue(new Sound(mins == 1 ? Sounds::Minute : Sounds::Minutes));
-}
-
-void Sfx::detonation10sCountdown()
-{
-	Serial.println("Playing: Detonation Countdown");
-	this->enqueue(new Sound(Sounds::DetonationCountdown));
 }

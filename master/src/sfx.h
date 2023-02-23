@@ -88,16 +88,6 @@ public:
 	void enqueue(ISound* sound);
 
 	/**
-	 * Announce "Self destruction in X min(s)"
-	 */
-	void selfDesctructionIn(byte mins);
-
-	/**
-	 * Announce "Detonation in 10, 9, 8, 7, 6, 5, 4, 3, 2, 1"
-	 */
-	void detonation10sCountdown();
-
-	/**
 	 * Must be regularly called to maintain audio playback
 	 */
 	void loop();

@@ -1,8 +1,8 @@
 #include <slave.h>
 #include <serialnumber.h>
 #include <Keypad.h>
-#include <hd44780.h>                       // main hd44780 header
-#include <hd44780ioClass/hd44780_I2Cexp.h> // i2c expander i/o class header
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h>
 
 #define STATE_LOCKED 1
 
